@@ -31,14 +31,17 @@ Le prototype comprend désormais :
 - le nom de travail modifiable **Astréa — Les Échos du Ciel** ;
 - une **carte de ville plein écran** aux codes des hubs de RPG mobiles comme MLA, sans grand héros au centre ;
 - neuf points d’intérêt intégrés au décor : taverne, marché, forge, sanctuaire, temple des vœux, arbre-monde, guilde, tour et arène ;
-- un portail arcanique central renforcé avec anneaux animés, cristaux et lueurs cyan/violet ;
+- un Nexus d’invocation central renforcé avec anneaux animés, cristal et lueurs cyan/violet ;
+- un décor panoramique original plus détaillé : palais de l’Aube, capitale suspendue, cascades, arène du Zénith et Spire des Épreuves ;
 - un arbre-monde avec jauge d’accumulation, coffre étincelant et récolte AFK interactive ;
 - un avatar de joueur avec cadre VIP doré, niveau, puissance et barre de progression ;
 - quatre monnaies dans le HUD : or, diamants, énergie et parchemins, chacune avec un bouton d’accès aux offres ;
 - un dock métallique à cinq entrées : Campagne, Cité, Héros, Sac et Guilde ;
 - un accès rapide rétractable pour les événements, le pass de combat, les quotidiennes, la taverne AFK et le magasin ;
 - de petits bandeaux d’information plutôt que de grandes fenêtres masquant la carte ;
-- une carte navigable horizontalement sur mobile, avec parallaxe, brume magique, rayons solaires et particules.
+- une carte navigable horizontalement sur mobile, avec parallaxe, rayons solaires et particules ;
+- un moteur d’ambiance canvas non plafonné à 60 FPS, compatible avec les écrans haute fréquence, avec mesure réelle et modes Auto, Ultra, Fluide et Éco ;
+- des effets optimisés sans re-render React par frame ni flou animé plein écran, et une mise en pause hors de l’onglet actif.
 
 Les intérieurs des bâtiments, les combats, les véritables tirages d’invocation et les systèmes sociaux ne sont pas intégrés à ce prototype. Ils devront faire l’objet de leurs propres pages de test.
 
