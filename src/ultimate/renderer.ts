@@ -11,10 +11,13 @@ import {
   segment,
   smooth,
 } from './math'
-import { HERO_PRESENTATION, RigLibrary, rigPoint } from './rig'
+import { HERO_PRESENTATION, RIG_HEAD_POINTS, RigLibrary, isNewHero, rigPoint } from './rig'
 import type { HeroId, RigPose, RigTransform } from './rig'
 import { CreatureLibrary, creaturePoint } from './creatures'
 import type { CreaturePose } from './creatures'
+import { NEW_HEROES, NEW_STORYBOARDS } from './new-heroes'
+import type { NewHeroId } from './new-heroes'
+import { NEW_ATTACHMENTS, idleNewHeroState, newHeroState } from './new-motions'
 
 export type UltimateMode = 'full' | 'short' | 'instant'
 export type { HeroId } from './rig'
@@ -52,6 +55,110 @@ const TAU = Math.PI * 2
 const DRAGON_X = 870
 const DRAGON_GROUND = 592
 const IMPACT_POINT = { x: 835, y: 440 }
+type HeroStyle = { color: string; rgb: string; secondary: string; dark: string }
+const BASE_STYLES = {
+  kaelis: { color: '#ffe0a0', rgb: '255, 185, 66', secondary: '255, 236, 174', dark: '#07172f' },
+  nyxara: { color: '#c7b1ff', rgb: '173, 128, 255', secondary: '116, 236, 255', dark: '#100b2c' },
+}
+const ULTIMATE_LINES: Record<HeroId, [string, string]> = {
+  kaelis: ['AUBE', 'INCARNÉE'], nyxara: ['REQUIEM DES', 'CONSTELLATIONS'],
+  talys: ['JUGEMENT', 'CÉLESTE'], ilya: ['POINTE DE', 'L’HIVER'],
+  nox: ['DANSE DES', 'ÉCLIPSES'], elowen: ['SANCTUAIRE', 'SAUVAGE'],
+  brakar: ['SÉISME DU', 'ZÉNITH'],
+}
+const CINEMATIC_LINES: Record<HeroId, { intro: string; middle: string; end: string }> = {
+  kaelis: { intro: '« La nuit s’arrête ici. »', middle: '« Aube incarnée… »', end: '« L’aube demeure. »' },
+  nyxara: { intro: '« Chaque étoile connaît ton nom. »', middle: '« Déroule le firmament. »', end: '« La constellation est scellée. »' },
+  talys: { intro: '« Tu n’entendras pas le tonnerre. »', middle: '« Jugement céleste… »', end: '« Circuit terminé. »' },
+  ilya: { intro: '« Une flèche suffit. »', middle: '« Cristal, prends ton envol. »', end: '« L’hiver se retire. »' },
+  nox: { intro: '« Regarde derrière toi. »', middle: '« Deux ombres, une entaille. »', end: '« La nuit garde le secret. »' },
+  elowen: { intro: '« Écoute la sève. »', middle: '« Grandis, sanctuaire. »', end: '« La sève apaise tout. »' },
+  brakar: { intro: '« Tu vas sentir la montagne. »', middle: '« Séisme du Zénith… »', end: '« La montagne ne bouge pas. »' },
+}
+function heroStyle(hero: HeroId): HeroStyle {
+  return isNewHero(hero) ? NEW_HEROES[hero] : BASE_STYLES[hero]
+}
+function usesRangedCamera(hero: HeroId) {
+  return hero === 'nyxara' || hero === 'ilya' || hero === 'elowen'
+}
+type Framing = [focusX: number, focusY: number, zoom: number]
+type CameraShot = { from: Framing; to: Framing }
+const shot = (from: Framing, to: Framing): CameraShot => ({ from, to })
+const CAMERA_TIMES = [0.55, 1.35, 2.35, 3.45, 4.5, 5.65, 8]
+const CAMERA_SHOTS: Record<HeroId, CameraShot[]> = {
+  kaelis: [
+    shot([620, 370, 1], [655, 350, 1.04]),
+    shot([330, 390, 1.9], [355, 375, 2.04]),
+    shot([440, 370, 1.42], [490, 330, 1.68]),
+    shot([660, 345, 0.94], [630, 325, 1.02]),
+    shot([600, 385, 1.18], [830, 445, 1.68]),
+    shot([865, 455, 1.28], [875, 445, 1.34]),
+    shot([520, 390, 1.12], [640, 365, 1.02]),
+  ],
+  nyxara: [
+    shot([620, 370, 1], [650, 355, 1.04]),
+    shot([360, 390, 1.75], [385, 375, 1.9]),
+    shot([510, 375, 1.2], [530, 350, 1.38]),
+    shot([650, 350, 0.95], [630, 330, 1.03]),
+    shot([650, 385, 1.18], [800, 435, 1.5]),
+    shot([850, 450, 1.22], [870, 445, 1.28]),
+    shot([560, 380, 1.2], [640, 365, 1.02]),
+  ],
+  talys: [
+    shot([610, 375, 1], [650, 350, 1.05]),
+    shot([370, 400, 1.8], [410, 385, 1.98]),
+    shot([405, 420, 1.42], [455, 390, 1.62]),
+    shot([650, 315, 0.88], [610, 285, 1.02]),
+    shot([590, 390, 1.16], [810, 430, 1.58]),
+    shot([845, 450, 1.25], [865, 440, 1.36]),
+    shot([470, 405, 1.2], [640, 365, 1.02]),
+  ],
+  ilya: [
+    shot([625, 370, 1], [650, 350, 1.03]),
+    shot([345, 365, 1.78], [370, 350, 1.94]),
+    shot([470, 390, 1.3], [520, 370, 1.48]),
+    shot([610, 355, 0.94], [700, 345, 1.08]),
+    shot([625, 370, 1.08], [825, 430, 1.46]),
+    shot([850, 450, 1.2], [875, 440, 1.3]),
+    shot([540, 380, 1.16], [640, 365, 1.02]),
+  ],
+  nox: [
+    shot([610, 375, 1.02], [645, 355, 1.07]),
+    shot([335, 370, 1.88], [365, 355, 2.02]),
+    shot([420, 395, 1.38], [470, 360, 1.6]),
+    shot([665, 320, 0.9], [600, 305, 1.04]),
+    shot([570, 390, 1.15], [805, 425, 1.62]),
+    shot([835, 435, 1.3], [875, 440, 1.4]),
+    shot([490, 395, 1.2], [640, 365, 1.02]),
+  ],
+  elowen: [
+    shot([620, 370, 1], [650, 350, 1.04]),
+    shot([350, 375, 1.72], [380, 360, 1.88]),
+    shot([450, 410, 1.22], [500, 385, 1.4]),
+    shot([650, 345, 0.92], [680, 340, 1.02]),
+    shot([600, 405, 1.08], [815, 440, 1.44]),
+    shot([845, 450, 1.2], [870, 445, 1.3]),
+    shot([530, 390, 1.15], [640, 365, 1.02]),
+  ],
+  brakar: [
+    shot([610, 380, 0.98], [650, 355, 1.04]),
+    shot([355, 395, 1.68], [390, 375, 1.86]),
+    shot([430, 420, 1.25], [485, 385, 1.48]),
+    shot([670, 300, 0.86], [625, 275, 1]),
+    shot([580, 400, 1.12], [820, 445, 1.55]),
+    shot([850, 465, 1.3], [875, 450, 1.38]),
+    shot([500, 405, 1.15], [640, 365, 1.02]),
+  ],
+}
+function cinematicShot(hero: HeroId, time: number): Framing {
+  const found = CAMERA_TIMES.findIndex(end => time < end)
+  const index = found < 0 ? CAMERA_TIMES.length - 1 : found
+  const start = index === 0 ? 0 : CAMERA_TIMES[index - 1]
+  const move = smooth(segment(time, start, CAMERA_TIMES[index]))
+  const current = CAMERA_SHOTS[hero][index]
+  return current.from.map((value, axis) => lerp(value, current.to[axis], move)) as Framing
+}
+
 const CAMERA_BASE: Camera = {
   focusX: 640,
   focusY: 360,
@@ -260,11 +367,14 @@ function dragonState(time: number, ambient: number, cinematic: boolean): DragonS
   return { transform, pose }
 }
 
-function stateAt(hero: HeroId, time: number, ambient: number) {
-  return hero === 'kaelis' ? kaelisState(time, ambient) : nyxaraState(time, ambient)
+function stateAt(hero: HeroId, time: number, ambient: number): SceneState {
+  if (hero === 'kaelis') return kaelisState(time, ambient)
+  if (hero === 'nyxara') return nyxaraState(time, ambient)
+  return newHeroState(hero, time, ambient)
 }
 
 function idleState(hero: HeroId, ambient: number): SceneState {
+  if (isNewHero(hero)) return idleNewHeroState(hero, ambient)
   if (hero === 'kaelis') {
     return {
       transform: { x: 350, y: 568, scale: 1, rotation: 0, facing: 1 },
@@ -297,7 +407,7 @@ function idleState(hero: HeroId, ambient: number): SceneState {
 }
 
 function headPoint(hero: HeroId, state: SceneState): [number, number] {
-  return rigPoint(hero, state.pose, state.transform, 'head', hero === 'kaelis' ? [455, 180] : [435, 225])
+  return rigPoint(hero, state.pose, state.transform, 'head', RIG_HEAD_POINTS[hero])
 }
 
 function cameraAt(hero: HeroId, time: number, ambient: number, state: SceneState): Camera {
@@ -318,7 +428,7 @@ function cameraAt(hero: HeroId, time: number, ambient: number, state: SceneState
     }
   } else if (time < 2.35) {
     const track = smooth(segment(time, 1.35, 2.35))
-    camera = { ...camera, focusX: lerp(480, hero === 'kaelis' ? 675 : 590, track), focusY: lerp(390, 330, track), zoom: 1.06, screenY: 385 }
+    camera = { ...camera, focusX: lerp(480, usesRangedCamera(hero) ? 590 : 675, track), focusY: lerp(390, 330, track), zoom: 1.06, screenY: 385 }
   } else if (time < 3.45) {
     const orbit = smooth(segment(time, 2.35, 3.45))
     camera = {
@@ -331,10 +441,11 @@ function cameraAt(hero: HeroId, time: number, ambient: number, state: SceneState
     }
   } else if (time < 4.5) {
     const chase = easeIn(segment(time, 3.45, 4.5))
+    const wideRangedImpact = hero === 'ilya' || hero === 'elowen'
     camera = {
-      focusX: lerp(hero === 'kaelis' ? 785 : 690, 865, chase),
-      focusY: lerp(hero === 'kaelis' ? 300 : 330, 420, chase),
-      zoom: hero === 'kaelis' ? lerp(0.86, 0.98, chase) : lerp(0.91, 1.04, chase),
+      focusX: lerp(usesRangedCamera(hero) ? 690 : 785, 865, chase),
+      focusY: lerp(usesRangedCamera(hero) ? 330 : 300, wideRangedImpact ? 350 : 420, chase),
+      zoom: wideRangedImpact ? lerp(0.9, 0.98, chase) : hero === 'kaelis' ? lerp(0.86, 0.98, chase) : lerp(0.91, 1.04, chase),
       rotation: lerp(-0.1, -0.025, chase),
       screenX: 630,
       screenY: hero === 'kaelis' ? 390 : 370,
@@ -342,10 +453,11 @@ function cameraAt(hero: HeroId, time: number, ambient: number, state: SceneState
   } else if (time < 5.65) {
     const settle = easeOut(segment(time, 4.5, 5.65))
     const shake = 30 * Math.exp(-(time - 4.5) * 4.7)
+    const wideRangedImpact = hero === 'ilya' || hero === 'elowen'
     camera = {
       focusX: lerp(835, 760, settle) + Math.sin(ambient * 91) * shake,
-      focusY: lerp(425, 405, settle) + Math.cos(ambient * 77) * shake * 0.65,
-      zoom: lerp(hero === 'kaelis' ? 1.16 : 1.08, 1.02, settle),
+      focusY: lerp(wideRangedImpact ? 350 : 425, wideRangedImpact ? 380 : 405, settle) + Math.cos(ambient * 77) * shake * 0.65,
+      zoom: wideRangedImpact ? lerp(0.98, 1, settle) : lerp(hero === 'kaelis' ? 1.16 : 1.08, 1.02, settle),
       rotation: Math.sin(ambient * 67) * shake * 0.0015,
       screenX: 640,
       screenY: hero === 'kaelis' ? 410 : 400,
@@ -356,6 +468,12 @@ function cameraAt(hero: HeroId, time: number, ambient: number, state: SceneState
   } else {
     const restore = smooth(segment(time, 6.75, 8))
     camera = { ...camera, focusX: lerp(690, 640, restore), focusY: lerp(400, 360, restore), zoom: lerp(1.14, 1, restore), screenY: lerp(380, 360, restore) }
+  }
+  if (isNewHero(hero)) {
+    const framing = cinematicShot(hero, time)
+    camera.focusX = lerp(camera.focusX, framing[0], 0.2)
+    camera.focusY = lerp(camera.focusY, framing[1], 0.16)
+    camera.zoom *= lerp(1, framing[2], 0.1)
   }
   return camera
 }
@@ -443,7 +561,8 @@ export class ZenithRenderer {
     this.drawShadow(state.transform.x, 572, 66, 0.25 * clamp(1 - (568 - state.transform.y) / 420, 0.1, 1))
     this.drawShadow(DRAGON_X + 55, DRAGON_GROUND + 3, 175, 0.32)
     if (frame.hero === 'kaelis') this.drawPhoenix(poseTime, frame.ambient, state)
-    else this.drawAstralDragon(time, frame.ambient, state)
+    else if (frame.hero === 'nyxara') this.drawAstralDragon(time, frame.ambient, state)
+    else this.drawNewHeroEffect(time, frame.ambient, state, frame.hero)
     this.drawDragon(poseTime, frame.ambient, true, frame.hero)
     this.drawHeroAfterimages(time, frame.ambient, frame.hero)
     this.rigs.draw(context, frame.hero, state.pose, state.transform, frame.ambient, state.charge)
@@ -468,9 +587,13 @@ export class ZenithRenderer {
       state.transform.x = keyed(time, [[0, 350], [0.1, 350], [0.3, 760], [0.39, 745], [0.7, 350]], easeInOut)
       state.transform.y = keyed(time, [[0, 568], [0.12, 568], [0.3, 430], [0.4, 480], [0.7, 568]], easeInOut)
       state.transform.rotation = keyed(time, [[0, 0], [0.12, 0], [0.32, 52], [0.42, 10], [0.7, 0]])
+    } else if (isNewHero(frame.hero) && !usesRangedCamera(frame.hero)) {
+      state.transform.x = keyed(time, [[0, 350], [0.1, 350], [0.3, 760], [0.39, 745], [0.7, 350]], easeInOut)
+      state.transform.y = keyed(time, [[0, 568], [0.12, 568], [0.3, 430], [0.4, 480], [0.7, 568]], easeInOut)
+      state.transform.rotation = keyed(time, [[0, 0], [0.12, 0], [0.32, frame.hero === 'brakar' ? 30 : 45], [0.42, 8], [0.7, 0]])
     } else {
-      state.transform.x = 350
-      state.transform.y = 548
+      state.transform.x = frame.hero === 'ilya' ? 400 : 350
+      state.transform.y = frame.hero === 'nyxara' ? 548 : 568
       state.transform.rotation = 0
     }
     context.save()
@@ -481,6 +604,7 @@ export class ZenithRenderer {
     this.drawShadow(state.transform.x, 572, 66, 0.2)
     this.drawShadow(DRAGON_X + 55, DRAGON_GROUND + 3, 175, 0.32)
     if (frame.hero === 'nyxara' && time > 0.08) this.drawInstantAstralDragon(time)
+    if (isNewHero(frame.hero) && usesRangedCamera(frame.hero) && time > 0.08) this.drawInstantNewProjectile(frame.hero, time)
     this.drawDragon(visualTime, frame.ambient, true, frame.hero)
     this.rigs.draw(context, frame.hero, state.pose, state.transform, frame.ambient, 0.8)
     if (time >= hitTime) this.drawImpactWorld(visualTime, frame.ambient, frame.hero)
@@ -494,9 +618,10 @@ export class ZenithRenderer {
 
   private drawArena(ambient: number, voidAmount: number, hero: HeroId) {
     const context = this.context
+    const style = heroStyle(hero)
     const gradient = context.createLinearGradient(0, 0, 0, 720)
-    gradient.addColorStop(0, hero === 'kaelis' ? '#07172f' : '#100b2c')
-    gradient.addColorStop(0.58, hero === 'kaelis' ? '#173d5c' : '#292054')
+    gradient.addColorStop(0, style.dark)
+    gradient.addColorStop(0.58, `rgba(${style.rgb}, 0.16)`)
     gradient.addColorStop(1, '#091324')
     context.fillStyle = gradient
     context.fillRect(-500, -400, 2280, 1520)
@@ -506,7 +631,7 @@ export class ZenithRenderer {
       context.globalAlpha = 1
     }
     const tint = context.createLinearGradient(0, 0, 1280, 300)
-    tint.addColorStop(0, hero === 'kaelis' ? 'rgba(255, 174, 73, 0.035)' : 'rgba(170, 93, 255, 0.055)')
+    tint.addColorStop(0, `rgba(${style.rgb}, 0.05)`)
     tint.addColorStop(0.55, 'rgba(72, 122, 255, 0.025)')
     tint.addColorStop(1, `rgba(105, 235, 255, ${0.025 + Math.sin(ambient * 0.4) * 0.01})`)
     context.fillStyle = tint
@@ -517,16 +642,15 @@ export class ZenithRenderer {
     const context = this.context
     context.save()
     context.globalAlpha = amount
+    const style = heroStyle(hero)
     const gradient = context.createRadialGradient(350, 350, 20, 500, 350, 800)
-    gradient.addColorStop(0, hero === 'kaelis' ? 'rgba(83, 54, 36, 0.42)' : 'rgba(63, 35, 105, 0.48)')
+    gradient.addColorStop(0, `rgba(${style.rgb}, 0.3)`)
     gradient.addColorStop(0.45, 'rgba(5, 15, 39, 0.88)')
     gradient.addColorStop(1, 'rgba(2, 5, 20, 0.98)')
     context.fillStyle = gradient
     context.fillRect(-600, -500, 2480, 1720)
     this.stars.forEach(star => {
-      context.fillStyle = hero === 'kaelis'
-        ? `rgba(255, 220, 157, ${0.3 + Math.sin(ambient * 2 + star.phase) * 0.25})`
-        : `rgba(191, 172, 255, ${0.3 + Math.sin(ambient * 2 + star.phase) * 0.25})`
+      context.fillStyle = `rgba(${style.secondary}, ${0.3 + Math.sin(ambient * 2 + star.phase) * 0.25})`
       context.beginPath()
       context.arc(star.x, star.y, star.size, 0, TAU)
       context.fill()
@@ -542,7 +666,7 @@ export class ZenithRenderer {
       const x = (index * 173.3 + ambient * (4 + index % 4)) % 1360 - 40
       const y = 180 + (index * 83) % 470 + Math.sin(ambient * 0.7 + index) * 18
       const alpha = (0.12 + Math.sin(ambient * 1.4 + index * 2.1) * 0.08) * opacity
-      context.fillStyle = hero === 'kaelis' ? `rgba(255, 205, 119, ${alpha})` : `rgba(174, 157, 255, ${alpha})`
+      context.fillStyle = `rgba(${heroStyle(hero).rgb}, ${alpha})`
       context.beginPath()
       context.arc(x, y, 1 + index % 3 * 0.45, 0, TAU)
       context.fill()
@@ -556,9 +680,11 @@ export class ZenithRenderer {
     const aerial = smooth(segment(time, 2.25, 2.65)) * (1 - smooth(segment(time, 3.35, 3.65)))
     const strength = Math.max(charge, aerial)
     if (strength <= 0.005) return
+    const torsoPoint: [number, number] = isNewHero(hero) ? [424, 430] : hero === 'kaelis' ? [450, 400] : [435, 400]
     const point = charge > aerial
-      ? rigPoint(hero, state.pose, state.transform, 'torso', hero === 'kaelis' ? [450, 400] : [435, 400])
+      ? rigPoint(hero, state.pose, state.transform, 'torso', torsoPoint)
       : [state.transform.x, state.transform.y - 100]
+    const style = heroStyle(hero)
     context.save()
     context.translate(point[0], point[1])
     context.globalCompositeOperation = 'lighter'
@@ -567,9 +693,7 @@ export class ZenithRenderer {
       context.save()
       context.rotate(ambient * (ring % 2 ? -0.24 : 0.18) + ring)
       context.scale(1, 0.38 + ring * 0.12)
-      context.strokeStyle = hero === 'kaelis'
-        ? `rgba(255, 205, 112, ${0.18 + strength * 0.32})`
-        : `rgba(${ring === 1 ? '191, 137, 255' : '101, 241, 245'}, ${0.18 + strength * 0.32})`
+      context.strokeStyle = `rgba(${ring === 1 ? style.secondary : style.rgb}, ${0.18 + strength * 0.32})`
       context.lineWidth = 1.5 + strength
       context.setLineDash([12 + ring * 3, 9])
       context.beginPath()
@@ -591,8 +715,10 @@ export class ZenithRenderer {
   private drawWeaponTrails(time: number, ambient: number, hero: HeroId) {
     if (time < 1.35 || time > 4.65) return
     const context = this.context
-    const bone = hero === 'kaelis' ? 'weapon' : 'staff'
-    const source: [number, number] = hero === 'kaelis' ? [570, 1145] : [755, 220]
+    const attachment = isNewHero(hero) ? NEW_ATTACHMENTS[hero] : null
+    const bone = attachment?.bone ?? (hero === 'kaelis' ? 'weapon' : 'staff')
+    const source: [number, number] = attachment?.point ?? (hero === 'kaelis' ? [570, 1145] : [755, 220])
+    const style = heroStyle(hero)
     const points: Array<[number, number]> = []
     for (let index = 8; index >= 0; index -= 1) {
       const sampleTime = Math.max(1.35, time - index * 0.026)
@@ -604,7 +730,7 @@ export class ZenithRenderer {
     context.globalCompositeOperation = 'lighter'
     context.lineCap = 'round'
     for (let index = 1; index < points.length; index += 1) {
-      context.strokeStyle = hero === 'kaelis' ? `rgba(255, 196, 87, ${fade * index / points.length * 0.38})` : `rgba(121, 224, 255, ${fade * index / points.length * 0.34})`
+      context.strokeStyle = `rgba(${style.rgb}, ${fade * index / points.length * 0.36})`
       context.lineWidth = 2 + index * 0.8
       context.beginPath()
       context.moveTo(points[index - 1][0], points[index - 1][1])
@@ -614,9 +740,254 @@ export class ZenithRenderer {
     context.restore()
   }
 
+  private drawNewHeroEffect(time: number, ambient: number, state: SceneState, hero: NewHeroId) {
+    const context = this.context
+    const style = heroStyle(hero)
+    const attachment = NEW_ATTACHMENTS[hero]
+    const anchor = rigPoint(hero, state.pose, state.transform, attachment.bone, attachment.point)
+    const power = smooth(segment(time, 0.45, 1.2)) * (1 - smooth(segment(time, 5.0, 5.9)))
+    context.save()
+    context.globalCompositeOperation = 'lighter'
+    context.lineCap = 'round'
+    context.lineJoin = 'round'
+
+    if (hero === 'talys') {
+      for (let bolt = 0; bolt < 8; bolt += 1) {
+        const angle = bolt / 8 * TAU + ambient * (bolt % 2 ? 0.7 : -0.5)
+        const length = 45 + bolt % 4 * 18
+        context.strokeStyle = `rgba(${bolt % 2 ? style.secondary : style.rgb}, ${power * 0.65})`
+        context.lineWidth = 1.5 + bolt % 3
+        context.beginPath()
+        context.moveTo(anchor[0], anchor[1])
+        for (let step = 1; step <= 4; step += 1) {
+          const distance = length * step / 4
+          const jitter = Math.sin(ambient * 24 + bolt * 7 + step * 3) * 12
+          context.lineTo(anchor[0] + Math.cos(angle) * distance + jitter, anchor[1] + Math.sin(angle) * distance - step * 5)
+        }
+        context.stroke()
+      }
+      const skyBolt = smooth(segment(time, 2.2, 2.55)) * (1 - smooth(segment(time, 4.5, 4.85)))
+      if (skyBolt > 0) {
+        context.strokeStyle = `rgba(${style.secondary}, ${skyBolt * 0.58})`
+        context.lineWidth = 5
+        context.beginPath()
+        context.moveTo(state.transform.x + 30, 70)
+        for (let step = 1; step <= 8; step += 1) {
+          const y = lerp(70, anchor[1], step / 8)
+          context.lineTo(lerp(state.transform.x + 30, anchor[0], step / 8) + Math.sin(step * 7 + ambient * 20) * 18, y)
+        }
+        context.stroke()
+      }
+    } else if (hero === 'ilya') {
+      if (time < 3.45) {
+        const alpha = smooth(segment(time, 1.1, 2.1)) * power
+        this.drawCrystalArrow(anchor[0] + 28, anchor[1], 0, alpha, 'ilya', 0.85)
+      } else if (time < 4.5) {
+        const launchState = stateAt(hero, 3.45, ambient)
+        const start = rigPoint(hero, launchState.pose, launchState.transform, attachment.bone, attachment.point)
+        const amount = easeInOut(segment(time, 3.45, 4.5))
+        const x = lerp(start[0] + 28, IMPACT_POINT.x, amount)
+        const y = lerp(start[1], IMPACT_POINT.y, amount) - Math.sin(amount * Math.PI) * 75
+        context.strokeStyle = `rgba(${style.secondary}, ${0.5 * (1 - amount * 0.35)})`
+        context.lineWidth = 7
+        context.beginPath()
+        context.moveTo(lerp(start[0] + 28, x, 0.62), lerp(start[1], y, 0.62) - 12)
+        context.lineTo(x, y)
+        context.stroke()
+        this.drawCrystalArrow(x, y, Math.atan2(IMPACT_POINT.y - y, IMPACT_POINT.x - x), 1, 'ilya', 1)
+      }
+    } else if (hero === 'nox') {
+      const eclipse = smooth(segment(time, 1.65, 2.35)) * (1 - smooth(segment(time, 4.55, 5.15)))
+      context.save()
+      context.translate(state.transform.x, state.transform.y - 105)
+      context.rotate(ambient * 0.55)
+      for (let ring = 0; ring < 3; ring += 1) {
+        context.strokeStyle = `rgba(${ring % 2 ? style.secondary : style.rgb}, ${eclipse * (0.42 - ring * 0.08)})`
+        context.lineWidth = 5 - ring
+        context.beginPath()
+        context.arc(0, 0, 78 + ring * 30, ring * 0.8, Math.PI * 1.45 + ring * 0.8)
+        context.stroke()
+      }
+      context.restore()
+    } else if (hero === 'elowen') {
+      for (let leaf = 0; leaf < 22; leaf += 1) {
+        const angle = ambient * (0.7 + leaf % 3 * 0.12) + leaf * 2.1
+        const radius = 65 + leaf % 6 * 21
+        const x = state.transform.x + Math.cos(angle) * radius
+        const y = state.transform.y - 110 + Math.sin(angle) * radius * 0.6 - leaf * 2
+        context.save()
+        context.translate(x, y)
+        context.rotate(angle + 0.8)
+        context.fillStyle = `rgba(${leaf % 3 ? style.rgb : style.secondary}, ${power * 0.65})`
+        context.beginPath()
+        context.ellipse(0, 0, 3 + leaf % 3, 7 + leaf % 4, 0, 0, TAU)
+        context.fill()
+        context.restore()
+      }
+      if (time >= 3.45 && time < 4.5) {
+        const amount = easeInOut(segment(time, 3.45, 4.5))
+        for (let root = 0; root < 4; root += 1) {
+          const startX = state.transform.x + root * 12
+          const endX = lerp(startX, IMPACT_POINT.x + root * 14 - 20, amount)
+          const endY = 558 - Math.sin(amount * Math.PI) * (35 + root * 9)
+          context.strokeStyle = `rgba(${root % 2 ? style.secondary : style.rgb}, ${0.48 + root * 0.08})`
+          context.lineWidth = 8 - root
+          context.beginPath()
+          context.moveTo(startX, 560)
+          context.quadraticCurveTo(lerp(startX, endX, 0.55), 500 - root * 14, endX, endY)
+          context.stroke()
+        }
+      }
+    } else if (hero === 'brakar') {
+      for (let rock = 0; rock < 14; rock += 1) {
+        const angle = rock / 14 * TAU + ambient * 0.35
+        const radius = 42 + rock % 5 * 18
+        const x = anchor[0] + Math.cos(angle) * radius
+        const y = anchor[1] + Math.sin(angle) * radius * 0.65
+        context.save()
+        context.translate(x, y)
+        context.rotate(angle + ambient)
+        context.fillStyle = `rgba(${rock % 3 ? style.rgb : style.secondary}, ${power * 0.5})`
+        polygon(context, [{ x: -4, y: -6 }, { x: 5, y: -4 }, { x: 7, y: 4 }, { x: -3, y: 7 }], context.fillStyle, 'transparent', 0)
+        context.restore()
+      }
+      const rune = smooth(segment(time, 2.1, 2.6)) * (1 - smooth(segment(time, 4.45, 4.85)))
+      context.save()
+      context.translate(state.transform.x, 560)
+      context.scale(1, 0.25)
+      context.strokeStyle = `rgba(${style.rgb}, ${rune * 0.55})`
+      context.lineWidth = 5
+      context.beginPath()
+      context.arc(0, 0, 105, 0, TAU)
+      context.stroke()
+      context.restore()
+    }
+    context.restore()
+  }
+
+  private drawCrystalArrow(x: number, y: number, angle: number, alpha: number, hero: NewHeroId, scale: number) {
+    if (alpha <= 0) return
+    const context = this.context
+    const style = heroStyle(hero)
+    context.save()
+    context.translate(x, y)
+    context.rotate(angle)
+    context.scale(scale, scale)
+    context.globalAlpha *= alpha
+    context.strokeStyle = `rgba(${style.secondary}, 0.9)`
+    context.lineWidth = 4
+    context.beginPath()
+    context.moveTo(-62, 0)
+    context.lineTo(12, 0)
+    context.stroke()
+    polygon(context, [{ x: 28, y: 0 }, { x: 7, y: -9 }, { x: 12, y: 0 }, { x: 7, y: 9 }], `rgba(${style.rgb}, 0.9)`, `rgba(${style.secondary}, 0.95)`, 2)
+    context.strokeStyle = `rgba(${style.rgb}, 0.75)`
+    context.lineWidth = 3
+    context.beginPath()
+    context.moveTo(-54, 0)
+    context.lineTo(-65, -10)
+    context.moveTo(-54, 0)
+    context.lineTo(-65, 10)
+    context.stroke()
+    context.restore()
+  }
+
+  private drawInstantNewProjectile(hero: NewHeroId, time: number) {
+    const amount = easeInOut(segment(time, 0.08, 0.34))
+    const start: Point = hero === 'ilya' ? { x: 500, y: 390 } : { x: 520, y: 330 }
+    const x = lerp(start.x, IMPACT_POINT.x, amount)
+    const y = lerp(start.y, IMPACT_POINT.y, amount) - Math.sin(amount * Math.PI) * 45
+    if (hero === 'ilya') {
+      this.drawCrystalArrow(x, y, Math.atan2(IMPACT_POINT.y - y, IMPACT_POINT.x - x), 1 - segment(time, 0.34, 0.45), hero, 1)
+    } else {
+      const context = this.context
+      const style = heroStyle(hero)
+      context.save()
+      context.globalCompositeOperation = 'lighter'
+      context.strokeStyle = `rgba(${style.rgb}, 0.6)`
+      context.lineWidth = 8
+      context.beginPath()
+      context.moveTo(lerp(start.x, x, 0.55), lerp(start.y, y, 0.55))
+      context.lineTo(x, y)
+      context.stroke()
+      context.fillStyle = `rgba(${style.secondary}, ${1 - segment(time, 0.34, 0.45)})`
+      context.beginPath()
+      context.arc(x, y, 10, 0, TAU)
+      context.fill()
+      context.restore()
+    }
+  }
+
+  private drawElementImpact(elapsed: number, hero: HeroId) {
+    if (!isNewHero(hero) || elapsed < 0 || elapsed > 1.55) return
+    const context = this.context
+    const style = heroStyle(hero)
+    const enter = easeOut(segment(elapsed, 0, 0.22))
+    const fade = 1 - smooth(segment(elapsed, 0.7, 1.55))
+    context.save()
+    context.globalCompositeOperation = 'lighter'
+    context.lineCap = 'round'
+    if (hero === 'talys') {
+      for (let bolt = 0; bolt < 9; bolt += 1) {
+        const angle = bolt / 9 * TAU
+        context.strokeStyle = `rgba(${bolt % 2 ? style.secondary : style.rgb}, ${fade * 0.75})`
+        context.lineWidth = 2 + bolt % 3
+        context.beginPath()
+        context.moveTo(IMPACT_POINT.x, IMPACT_POINT.y)
+        for (let step = 1; step <= 4; step += 1) {
+          const radius = enter * (35 + bolt % 4 * 28) * step / 4
+          context.lineTo(IMPACT_POINT.x + Math.cos(angle) * radius + Math.sin(step * 8 + bolt) * 12, IMPACT_POINT.y + Math.sin(angle) * radius)
+        }
+        context.stroke()
+      }
+    } else if (hero === 'ilya') {
+      for (let shard = 0; shard < 10; shard += 1) {
+        const angle = shard / 10 * TAU
+        const radius = 28 + shard % 4 * 24
+        const x = IMPACT_POINT.x + Math.cos(angle) * radius * enter
+        const y = IMPACT_POINT.y + Math.sin(angle) * radius * enter
+        context.save()
+        context.translate(x, y)
+        context.rotate(angle + Math.PI / 2)
+        context.scale(enter, enter)
+        polygon(context, [{ x: 0, y: -28 }, { x: 8, y: 4 }, { x: 0, y: 14 }, { x: -8, y: 4 }], `rgba(${style.rgb}, ${fade * 0.3})`, `rgba(${style.secondary}, ${fade * 0.8})`, 2)
+        context.restore()
+      }
+    } else if (hero === 'nox') {
+      context.save()
+      context.translate(IMPACT_POINT.x, IMPACT_POINT.y)
+      context.rotate(0.65)
+      context.strokeStyle = `rgba(${style.secondary}, ${fade * 0.85})`
+      context.lineWidth = 12 * (1 - enter) + 3
+      context.beginPath()
+      context.moveTo(-130 * enter, 0)
+      context.lineTo(130 * enter, 0)
+      context.stroke()
+      context.restore()
+    } else if (hero === 'elowen') {
+      for (let root = 0; root < 5; root += 1) {
+        const offset = root * 18 - 36
+        context.strokeStyle = `rgba(${root % 2 ? style.secondary : style.rgb}, ${fade * 0.58})`
+        context.lineWidth = 7 - root * 0.6
+        context.beginPath()
+        context.moveTo(IMPACT_POINT.x + offset, 570)
+        context.bezierCurveTo(IMPACT_POINT.x - 90 + offset, 520, IMPACT_POINT.x + 100 - offset, 470, IMPACT_POINT.x + offset * 0.4, 405 - enter * 25)
+        context.stroke()
+      }
+    } else if (hero === 'brakar') {
+      for (let rock = 0; rock < 8; rock += 1) {
+        const x = 760 + rock * 31
+        const height = (45 + rock % 4 * 24) * enter
+        polygon(context, [{ x: x - 14, y: 570 }, { x: x - 8, y: 570 - height * 0.72 }, { x, y: 570 - height }, { x: x + 12, y: 570 }], `rgba(${style.rgb}, ${fade * 0.34})`, `rgba(${style.secondary}, ${fade * 0.5})`, 1.5)
+      }
+    }
+    context.restore()
+  }
+
   private drawHeroAfterimages(time: number, ambient: number, hero: HeroId) {
-    if (hero !== 'kaelis' || time < 3.58 || time > 4.5) return
-    const intensity = smooth(segment(time, 3.58, 3.82)) * (1 - smooth(segment(time, 4.38, 4.5)))
+    const hasAfterimages = hero === 'kaelis' || hero === 'nox' || hero === 'talys'
+    if (!hasAfterimages || time < 3.58 || time > 4.5) return
+    const intensity = smooth(segment(time, 3.58, 3.82)) * (1 - smooth(segment(time, 4.38, 4.5))) * (hero === 'nox' ? 1.7 : 1)
     for (let index = 2; index >= 1; index -= 1) {
       const sampleTime = Math.max(3.45, time - index * 0.045)
       const sample = stateAt(hero, sampleTime, ambient - index * 0.045)
@@ -629,7 +1000,7 @@ export class ZenithRenderer {
     const context = this.context
     const enter = easeOut(segment(time, 4.5, 4.88))
     const glow = 1 - smooth(segment(time, 5.0, 7.8))
-    const rgb = hero === 'kaelis' ? '255, 156, 55' : '154, 113, 255'
+    const rgb = heroStyle(hero).rgb
     context.save()
     context.translate(870, 566)
     context.scale(1, 0.28)
@@ -816,7 +1187,7 @@ export class ZenithRenderer {
     if (time >= 4.5) {
       const scar = easeOut(segment(time, 4.5, 4.82))
       const wound = creaturePoint('dragon', state.pose, state.transform, 'neck', [320, 380])
-      const rgb = hero === 'kaelis' ? '255, 182, 70' : '180, 132, 255'
+      const rgb = heroStyle(hero).rgb
       const glow = context.createRadialGradient(wound[0], wound[1], 0, wound[0], wound[1], 52)
       glow.addColorStop(0, `rgba(${rgb}, ${0.4 * scar})`)
       glow.addColorStop(1, `rgba(${rgb}, 0)`)
@@ -845,8 +1216,8 @@ export class ZenithRenderer {
     const ring = easeOut(segment(elapsed, 0, 0.82))
     const burst = easeOut(segment(elapsed, 0, 0.2))
     const fade = 1 - smooth(segment(elapsed, 0.75, 1.75))
-    const rgb = hero === 'kaelis' ? '255, 185, 66' : '173, 128, 255'
-    const secondary = hero === 'kaelis' ? '255, 236, 174' : '116, 236, 255'
+    const rgb = heroStyle(hero).rgb
+    const secondary = heroStyle(hero).secondary
     context.save()
     context.globalCompositeOperation = 'lighter'
 
@@ -948,6 +1319,7 @@ export class ZenithRenderer {
       polygon(context, [{ x: -piece.size, y: -piece.size * 0.4 }, { x: piece.size * 0.7, y: -piece.size * 0.7 }, { x: piece.size, y: piece.size * 0.5 }, { x: -piece.size * 0.5, y: piece.size }], index % 4 === 0 ? '#8defff' : '#35485e', '#9db4c1', 1)
       context.restore()
     })
+    this.drawElementImpact(elapsed, hero)
   }
 
   private drawSpeedLines(time: number, ambient: number, hero: HeroId) {
@@ -959,7 +1331,7 @@ export class ZenithRenderer {
       const y = (index * 71 + ambient * 530) % 800 - 40
       const x = (index * 149 + ambient * 280) % 1400 - 60
       const length = 70 + index % 5 * 30
-      context.strokeStyle = hero === 'kaelis' ? `rgba(255, 215, 149, ${intensity * (0.07 + index % 4 * 0.025)})` : `rgba(177, 158, 255, ${intensity * (0.07 + index % 4 * 0.025)})`
+      context.strokeStyle = `rgba(${heroStyle(hero).secondary}, ${intensity * (0.07 + index % 4 * 0.025)})`
       context.lineWidth = 1 + index % 3
       context.beginPath()
       context.moveTo(x, y)
@@ -977,7 +1349,7 @@ export class ZenithRenderer {
     if (flash > 0) {
       const gradient = context.createRadialGradient(IMPACT_POINT.x, IMPACT_POINT.y, 8, IMPACT_POINT.x, IMPACT_POINT.y, 540)
       gradient.addColorStop(0, `rgba(255, 255, 255, ${flash})`)
-      gradient.addColorStop(0.24, hero === 'kaelis' ? `rgba(255, 190, 78, ${flash * 0.42})` : `rgba(170, 121, 255, ${flash * 0.42})`)
+      gradient.addColorStop(0.24, `rgba(${heroStyle(hero).rgb}, ${flash * 0.42})`)
       gradient.addColorStop(1, 'rgba(32, 98, 192, 0)')
       context.fillStyle = gradient
       context.fillRect(0, 0, 1280, 720)
@@ -993,6 +1365,7 @@ export class ZenithRenderer {
     const leave = 1 - smooth(segment(elapsed, 0.95, 1.35))
     const y = lerp(270, 210, easeOut(segment(elapsed, 0.07, 1.1)))
     const presentation = HERO_PRESENTATION[hero]
+    const style = heroStyle(hero)
     context.save()
     context.globalAlpha = enter * leave * opacity
     context.translate(930, y)
@@ -1000,10 +1373,11 @@ export class ZenithRenderer {
     context.textAlign = 'center'
     context.textBaseline = 'middle'
     context.font = '900 26px Manrope, sans-serif'
-    context.fillStyle = hero === 'kaelis' ? '#ffe39a' : '#d9c2ff'
+    context.fillStyle = style.color
     context.shadowColor = '#071225'
     context.shadowBlur = 8
-    context.fillText(hero === 'kaelis' ? 'CRITIQUE · AUBE' : 'MARQUE ASTRALE', 0, -42)
+    const impactLabel = hero === 'kaelis' ? 'CRITIQUE · AUBE' : hero === 'nyxara' ? 'MARQUE ASTRALE' : presentation.status.split(' · ')[0].toUpperCase()
+    context.fillText(impactLabel, 0, -42)
     context.font = 'italic 900 68px Manrope, sans-serif'
     const value = presentation.damage.toLocaleString('fr-FR')
     context.lineWidth = 9
@@ -1011,8 +1385,8 @@ export class ZenithRenderer {
     context.strokeText(value, 0, 6)
     const gradient = context.createLinearGradient(0, -30, 0, 35)
     gradient.addColorStop(0, '#ffffff')
-    gradient.addColorStop(0.45, hero === 'kaelis' ? '#fff0b9' : '#e4d4ff')
-    gradient.addColorStop(1, hero === 'kaelis' ? '#e9a94c' : '#9b73e5')
+    gradient.addColorStop(0.45, style.color)
+    gradient.addColorStop(1, `rgba(${style.rgb}, 1)`)
     context.fillStyle = gradient
     context.fillText(value, 0, 6)
     context.restore()
@@ -1021,38 +1395,33 @@ export class ZenithRenderer {
   private drawCinematicText(time: number, hero: HeroId) {
     const context = this.context
     const presentation = HERO_PRESENTATION[hero]
+    const style = heroStyle(hero)
     const titleAlpha = smooth(segment(time, 0.68, 0.86)) * (1 - smooth(segment(time, 1.18, 1.34)))
     if (titleAlpha > 0) {
+      const [firstLine, secondLine] = ULTIMATE_LINES[hero]
       context.save()
       context.globalAlpha = titleAlpha
       context.textAlign = 'left'
-      context.fillStyle = hero === 'kaelis' ? '#ffe0a0' : '#c7b1ff'
+      context.fillStyle = style.color
       context.font = '600 15px Cinzel, serif'
-      context.fillText(hero === 'kaelis' ? 'KAELIS · LUMIÈRE' : 'NYXARA · COSMOS', 76, 477)
+      context.fillText(`${presentation.name.toUpperCase()} · ${presentation.element.split(' · ')[0].toUpperCase()}`, 76, 477)
       context.fillStyle = '#f4f8ff'
-      context.font = '600 43px Cinzel, serif'
       context.shadowColor = '#071225'
       context.shadowBlur = 12
-      if (hero === 'kaelis') {
-        context.fillText('AUBE', 72, 530)
-        context.fillStyle = '#e4c77e'
-        context.fillText('INCARNÉE', 72, 578)
-      } else {
-        context.font = '600 36px Cinzel, serif'
-        context.fillText('REQUIEM DES', 72, 530)
-        context.fillStyle = '#c4a2f2'
-        context.font = '600 32px Cinzel, serif'
-        context.fillText('CONSTELLATIONS', 72, 578)
-      }
-      context.fillStyle = hero === 'kaelis' ? '#f0bd61' : '#a881ed'
+      context.font = `600 ${firstLine.length > 12 ? 34 : 40}px Cinzel, serif`
+      context.fillText(firstLine, 72, 530)
+      context.fillStyle = style.color
+      context.font = `600 ${secondLine.length > 12 ? 30 : 38}px Cinzel, serif`
+      context.fillText(secondLine, 72, 578)
       context.fillRect(75, 596, 160 * titleAlpha, 2)
       context.restore()
     }
+    const lines = CINEMATIC_LINES[hero]
     let subtitle = ''
-    if (time >= 0.62 && time < 1.3) subtitle = hero === 'kaelis' ? '« La nuit s’arrête ici. »' : '« Chaque étoile connaît ton nom. »'
-    else if (time >= 2.48 && time < 3.35) subtitle = hero === 'kaelis' ? '« Aube incarnée… »' : '« Déroule le firmament. »'
+    if (time >= 0.62 && time < 1.3) subtitle = lines.intro
+    else if (time >= 2.48 && time < 3.35) subtitle = lines.middle
     else if (time >= 3.8 && time < 4.62) subtitle = presentation.subtitle
-    else if (time >= 5.85 && time < 6.65) subtitle = hero === 'kaelis' ? '« L’aube demeure. »' : '« La constellation est scellée. »'
+    else if (time >= 5.85 && time < 6.65) subtitle = lines.end
     if (subtitle) {
       context.save()
       context.textAlign = 'center'
@@ -1095,7 +1464,7 @@ export function mapShortTime(time: number) {
   return keyed(time, [[0, 0.42], [0.24, 0.76], [0.55, 1.28], [0.86, 2.3], [1.08, 3.44], [1.35, 4.5], [1.67, 5.22], [1.98, 6.5], [2.4, 8]], easeInOut)
 }
 
-const SHOTS: Record<HeroId, Array<{ at: number; name: string; detail: string }>> = {
+const BASE_SHOTS: Record<'kaelis' | 'nyxara', Array<{ at: number; name: string; detail: string }>> = {
   kaelis: [
     { at: 0, name: 'Le dragon du Zénith', detail: 'Plan d’ensemble · le dragon respire et Kaelis prend appui' },
     { at: 0.55, name: 'Le serment de l’aube', detail: 'Gros plan · le regard, la lame et les braises' },
@@ -1117,7 +1486,10 @@ const SHOTS: Record<HeroId, Array<{ at: number; name: string; detail: string }>>
 }
 
 export function shotAt(time: number, hero: HeroId = 'kaelis') {
-  const shots = SHOTS[hero]
+  const times = [0, 0.55, 1.35, 2.35, 3.45, 4.5, 5.65]
+  const shots = isNewHero(hero)
+    ? NEW_STORYBOARDS[hero].map((entry, index) => ({ at: times[index], name: entry[2], detail: entry[3] }))
+    : BASE_SHOTS[hero]
   if (time >= 6.75) return { index: 7, name: 'Retour au combat', detail: 'La caméra et les contrôles sont restitués' }
   let index = 0
   for (let shot = 1; shot < shots.length; shot += 1) if (time >= shots[shot].at) index = shot

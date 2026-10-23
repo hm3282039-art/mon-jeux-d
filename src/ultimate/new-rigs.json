@@ -1,0 +1,1458 @@
+{
+  "talys": {
+    "width": 848,
+    "height": 1264,
+    "atlasWidth": 1600,
+    "atlasHeight": 652,
+    "drawOrder": [
+      "hair",
+      "cloth-left",
+      "cloth-right",
+      "leg-back-lower",
+      "leg-back-upper",
+      "leg-front-lower",
+      "leg-front-upper",
+      "torso",
+      "arm-left-upper",
+      "arm-left-lower",
+      "arm-right-upper",
+      "arm-right-lower",
+      "head",
+      "weapon-left",
+      "weapon-right"
+    ],
+    "parts": {
+      "leg-front-lower": {
+        "x": 5,
+        "y": 5,
+        "w": 188,
+        "h": 417,
+        "cx": 452,
+        "cy": 833,
+        "bone": "legFrontLower"
+      },
+      "leg-back-lower": {
+        "x": 198,
+        "y": 5,
+        "w": 198,
+        "h": 373,
+        "cx": 221,
+        "cy": 828,
+        "bone": "legBackLower"
+      },
+      "torso": {
+        "x": 401,
+        "y": 5,
+        "w": 261,
+        "h": 373,
+        "cx": 284,
+        "cy": 280,
+        "bone": "torso"
+      },
+      "cloth-left": {
+        "x": 667,
+        "y": 5,
+        "w": 160,
+        "h": 295,
+        "cx": 243,
+        "cy": 543,
+        "bone": "clothLeft"
+      },
+      "head": {
+        "x": 832,
+        "y": 5,
+        "w": 210,
+        "h": 291,
+        "cx": 322,
+        "cy": 42,
+        "bone": "head"
+      },
+      "arm-right-lower": {
+        "x": 1047,
+        "y": 5,
+        "w": 159,
+        "h": 283,
+        "cx": 536,
+        "cy": 428,
+        "bone": "forearmRight"
+      },
+      "arm-left-lower": {
+        "x": 1211,
+        "y": 5,
+        "w": 101,
+        "h": 262,
+        "cx": 192,
+        "cy": 440,
+        "bone": "forearmLeft"
+      },
+      "cloth-right": {
+        "x": 1317,
+        "y": 5,
+        "w": 202,
+        "h": 258,
+        "cx": 418,
+        "cy": 595,
+        "bone": "clothRight"
+      },
+      "leg-back-upper": {
+        "x": 5,
+        "y": 427,
+        "w": 95,
+        "h": 220,
+        "cx": 332,
+        "cy": 649,
+        "bone": "legBack"
+      },
+      "arm-left-upper": {
+        "x": 105,
+        "y": 427,
+        "w": 88,
+        "h": 219,
+        "cx": 265,
+        "cy": 281,
+        "bone": "armLeft"
+      },
+      "arm-right-upper": {
+        "x": 198,
+        "y": 427,
+        "w": 126,
+        "h": 183,
+        "cx": 503,
+        "cy": 262,
+        "bone": "armRight"
+      },
+      "leg-front-upper": {
+        "x": 329,
+        "y": 427,
+        "w": 200,
+        "h": 178,
+        "cx": 423,
+        "cy": 683,
+        "bone": "legFront"
+      },
+      "hair": {
+        "x": 534,
+        "y": 427,
+        "w": 12,
+        "h": 24,
+        "cx": 688,
+        "cy": 487,
+        "bone": "hair"
+      }
+    },
+    "root": [
+      424,
+      1210
+    ],
+    "baseScale": 0.245,
+    "bones": {
+      "root": {
+        "parent": null,
+        "pivot": [
+          424,
+          1210
+        ]
+      },
+      "torso": {
+        "parent": "root",
+        "pivot": [
+          424,
+          620
+        ]
+      },
+      "head": {
+        "parent": "torso",
+        "pivot": [
+          435,
+          280
+        ]
+      },
+      "hair": {
+        "parent": "head",
+        "pivot": [
+          420,
+          260
+        ]
+      },
+      "clothLeft": {
+        "parent": "root",
+        "pivot": [
+          360,
+          560
+        ]
+      },
+      "clothRight": {
+        "parent": "root",
+        "pivot": [
+          500,
+          560
+        ]
+      },
+      "armLeft": {
+        "parent": "torso",
+        "pivot": [
+          310,
+          340
+        ]
+      },
+      "forearmLeft": {
+        "parent": "armLeft",
+        "pivot": [
+          230,
+          510
+        ]
+      },
+      "weaponLeft": {
+        "parent": "forearmLeft",
+        "pivot": [
+          190,
+          540
+        ]
+      },
+      "armRight": {
+        "parent": "torso",
+        "pivot": [
+          550,
+          350
+        ]
+      },
+      "forearmRight": {
+        "parent": "armRight",
+        "pivot": [
+          610,
+          520
+        ]
+      },
+      "weaponRight": {
+        "parent": "forearmRight",
+        "pivot": [
+          680,
+          450
+        ]
+      },
+      "legBack": {
+        "parent": "root",
+        "pivot": [
+          360,
+          680
+        ]
+      },
+      "legBackLower": {
+        "parent": "legBack",
+        "pivot": [
+          350,
+          900
+        ]
+      },
+      "legFront": {
+        "parent": "root",
+        "pivot": [
+          500,
+          680
+        ]
+      },
+      "legFrontLower": {
+        "parent": "legFront",
+        "pivot": [
+          520,
+          920
+        ]
+      }
+    },
+    "face": {
+      "eyes": [
+        [
+          390,
+          180,
+          18
+        ],
+        [
+          445,
+          175,
+          18
+        ]
+      ],
+      "mouth": [
+        420,
+        225
+      ],
+      "skin": "#b77c5e"
+    },
+    "headPoint": [
+      420,
+      170
+    ]
+  },
+  "ilya": {
+    "width": 848,
+    "height": 1264,
+    "atlasWidth": 1600,
+    "atlasHeight": 1151,
+    "drawOrder": [
+      "hair",
+      "cloth-left",
+      "cloth-right",
+      "leg-back-lower",
+      "leg-back-upper",
+      "leg-front-lower",
+      "leg-front-upper",
+      "torso",
+      "arm-left-upper",
+      "arm-left-lower",
+      "arm-right-upper",
+      "arm-right-lower",
+      "head",
+      "weapon-left",
+      "weapon-right"
+    ],
+    "parts": {
+      "weapon-left": {
+        "x": 5,
+        "y": 5,
+        "w": 263,
+        "h": 737,
+        "cx": 40,
+        "cy": 32,
+        "bone": "weaponLeft"
+      },
+      "cloth-right": {
+        "x": 273,
+        "y": 5,
+        "w": 323,
+        "h": 452,
+        "cx": 424,
+        "cy": 595,
+        "bone": "clothRight"
+      },
+      "hair": {
+        "x": 601,
+        "y": 5,
+        "w": 212,
+        "h": 422,
+        "cx": 534,
+        "cy": 134,
+        "bone": "hair"
+      },
+      "leg-back-lower": {
+        "x": 818,
+        "y": 5,
+        "w": 143,
+        "h": 414,
+        "cx": 299,
+        "cy": 828,
+        "bone": "legBackLower"
+      },
+      "torso": {
+        "x": 966,
+        "y": 5,
+        "w": 258,
+        "h": 408,
+        "cx": 298,
+        "cy": 245,
+        "bone": "torso"
+      },
+      "leg-front-lower": {
+        "x": 1229,
+        "y": 5,
+        "w": 203,
+        "h": 407,
+        "cx": 436,
+        "cy": 833,
+        "bone": "legFrontLower"
+      },
+      "cloth-left": {
+        "x": 5,
+        "y": 747,
+        "w": 183,
+        "h": 399,
+        "cx": 250,
+        "cy": 614,
+        "bone": "clothLeft"
+      },
+      "arm-right-lower": {
+        "x": 193,
+        "y": 747,
+        "w": 219,
+        "h": 287,
+        "cx": 533,
+        "cy": 428,
+        "bone": "forearmRight"
+      },
+      "arm-left-lower": {
+        "x": 417,
+        "y": 747,
+        "w": 155,
+        "h": 279,
+        "cx": 138,
+        "cy": 444,
+        "bone": "forearmLeft"
+      },
+      "arm-right-upper": {
+        "x": 577,
+        "y": 747,
+        "w": 157,
+        "h": 241,
+        "cx": 503,
+        "cy": 255,
+        "bone": "armRight"
+      },
+      "head": {
+        "x": 739,
+        "y": 747,
+        "w": 190,
+        "h": 238,
+        "cx": 367,
+        "cy": 95,
+        "bone": "head"
+      },
+      "leg-front-upper": {
+        "x": 934,
+        "y": 747,
+        "w": 36,
+        "h": 201,
+        "cx": 423,
+        "cy": 717,
+        "bone": "legFront"
+      },
+      "leg-back-upper": {
+        "x": 975,
+        "y": 747,
+        "w": 38,
+        "h": 169,
+        "cx": 400,
+        "cy": 728,
+        "bone": "legBack"
+      },
+      "arm-left-upper": {
+        "x": 1018,
+        "y": 747,
+        "w": 84,
+        "h": 146,
+        "cx": 264,
+        "cy": 352,
+        "bone": "armLeft"
+      }
+    },
+    "root": [
+      424,
+      1210
+    ],
+    "baseScale": 0.245,
+    "bones": {
+      "root": {
+        "parent": null,
+        "pivot": [
+          424,
+          1210
+        ]
+      },
+      "torso": {
+        "parent": "root",
+        "pivot": [
+          424,
+          620
+        ]
+      },
+      "head": {
+        "parent": "torso",
+        "pivot": [
+          435,
+          280
+        ]
+      },
+      "hair": {
+        "parent": "head",
+        "pivot": [
+          420,
+          260
+        ]
+      },
+      "clothLeft": {
+        "parent": "root",
+        "pivot": [
+          360,
+          560
+        ]
+      },
+      "clothRight": {
+        "parent": "root",
+        "pivot": [
+          500,
+          560
+        ]
+      },
+      "armLeft": {
+        "parent": "torso",
+        "pivot": [
+          320,
+          370
+        ]
+      },
+      "forearmLeft": {
+        "parent": "armLeft",
+        "pivot": [
+          210,
+          500
+        ]
+      },
+      "weaponLeft": {
+        "parent": "forearmLeft",
+        "pivot": [
+          180,
+          540
+        ]
+      },
+      "armRight": {
+        "parent": "torso",
+        "pivot": [
+          570,
+          370
+        ]
+      },
+      "forearmRight": {
+        "parent": "armRight",
+        "pivot": [
+          630,
+          540
+        ]
+      },
+      "weaponRight": {
+        "parent": "forearmRight",
+        "pivot": [
+          680,
+          450
+        ]
+      },
+      "legBack": {
+        "parent": "root",
+        "pivot": [
+          360,
+          680
+        ]
+      },
+      "legBackLower": {
+        "parent": "legBack",
+        "pivot": [
+          350,
+          900
+        ]
+      },
+      "legFront": {
+        "parent": "root",
+        "pivot": [
+          500,
+          680
+        ]
+      },
+      "legFrontLower": {
+        "parent": "legFront",
+        "pivot": [
+          520,
+          920
+        ]
+      }
+    },
+    "face": {
+      "eyes": [
+        [
+          440,
+          190,
+          17
+        ],
+        [
+          490,
+          190,
+          17
+        ]
+      ],
+      "mouth": [
+        465,
+        235
+      ],
+      "skin": "#ead0c8"
+    },
+    "headPoint": [
+      485,
+      190
+    ]
+  },
+  "nox": {
+    "width": 848,
+    "height": 1264,
+    "atlasWidth": 1600,
+    "atlasHeight": 770,
+    "drawOrder": [
+      "hair",
+      "cloth-left",
+      "cloth-right",
+      "leg-back-lower",
+      "leg-back-upper",
+      "leg-front-lower",
+      "leg-front-upper",
+      "torso",
+      "arm-left-upper",
+      "arm-left-lower",
+      "arm-right-upper",
+      "arm-right-lower",
+      "head",
+      "weapon-left",
+      "weapon-right"
+    ],
+    "parts": {
+      "cloth-left": {
+        "x": 5,
+        "y": 5,
+        "w": 217,
+        "h": 447,
+        "cx": 216,
+        "cy": 543,
+        "bone": "clothLeft"
+      },
+      "cloth-right": {
+        "x": 227,
+        "y": 5,
+        "w": 334,
+        "h": 447,
+        "cx": 424,
+        "cy": 595,
+        "bone": "clothRight"
+      },
+      "torso": {
+        "x": 566,
+        "y": 5,
+        "w": 272,
+        "h": 408,
+        "cx": 284,
+        "cy": 245,
+        "bone": "torso"
+      },
+      "leg-front-lower": {
+        "x": 843,
+        "y": 5,
+        "w": 180,
+        "h": 406,
+        "cx": 452,
+        "cy": 835,
+        "bone": "legFrontLower"
+      },
+      "leg-back-lower": {
+        "x": 1028,
+        "y": 5,
+        "w": 174,
+        "h": 373,
+        "cx": 257,
+        "cy": 828,
+        "bone": "legBackLower"
+      },
+      "weapon-right": {
+        "x": 1207,
+        "y": 5,
+        "w": 233,
+        "h": 316,
+        "cx": 557,
+        "cy": 407,
+        "bone": "weaponRight"
+      },
+      "weapon-left": {
+        "x": 5,
+        "y": 457,
+        "w": 272,
+        "h": 308,
+        "cx": 31,
+        "cy": 558,
+        "bone": "weaponLeft"
+      },
+      "head": {
+        "x": 282,
+        "y": 457,
+        "w": 210,
+        "h": 295,
+        "cx": 330,
+        "cy": 38,
+        "bone": "head"
+      },
+      "arm-right-lower": {
+        "x": 497,
+        "y": 457,
+        "w": 175,
+        "h": 280,
+        "cx": 533,
+        "cy": 428,
+        "bone": "forearmRight"
+      },
+      "arm-left-lower": {
+        "x": 677,
+        "y": 457,
+        "w": 106,
+        "h": 271,
+        "cx": 187,
+        "cy": 447,
+        "bone": "forearmLeft"
+      },
+      "arm-left-upper": {
+        "x": 788,
+        "y": 457,
+        "w": 69,
+        "h": 228,
+        "cx": 284,
+        "cy": 272,
+        "bone": "armLeft"
+      },
+      "leg-back-upper": {
+        "x": 862,
+        "y": 457,
+        "w": 38,
+        "h": 181,
+        "cx": 400,
+        "cy": 728,
+        "bone": "legBack"
+      },
+      "arm-right-upper": {
+        "x": 905,
+        "y": 457,
+        "w": 124,
+        "h": 177,
+        "cx": 503,
+        "cy": 255,
+        "bone": "armRight"
+      },
+      "leg-front-upper": {
+        "x": 1034,
+        "y": 457,
+        "w": 34,
+        "h": 161,
+        "cx": 423,
+        "cy": 717,
+        "bone": "legFront"
+      },
+      "hair": {
+        "x": 1073,
+        "y": 457,
+        "w": 50,
+        "h": 31,
+        "cx": 534,
+        "cy": 238,
+        "bone": "hair"
+      }
+    },
+    "root": [
+      424,
+      1210
+    ],
+    "baseScale": 0.245,
+    "bones": {
+      "root": {
+        "parent": null,
+        "pivot": [
+          424,
+          1210
+        ]
+      },
+      "torso": {
+        "parent": "root",
+        "pivot": [
+          424,
+          620
+        ]
+      },
+      "head": {
+        "parent": "torso",
+        "pivot": [
+          435,
+          280
+        ]
+      },
+      "hair": {
+        "parent": "head",
+        "pivot": [
+          420,
+          260
+        ]
+      },
+      "clothLeft": {
+        "parent": "root",
+        "pivot": [
+          360,
+          560
+        ]
+      },
+      "clothRight": {
+        "parent": "root",
+        "pivot": [
+          500,
+          560
+        ]
+      },
+      "armLeft": {
+        "parent": "torso",
+        "pivot": [
+          310,
+          340
+        ]
+      },
+      "forearmLeft": {
+        "parent": "armLeft",
+        "pivot": [
+          230,
+          510
+        ]
+      },
+      "weaponLeft": {
+        "parent": "forearmLeft",
+        "pivot": [
+          230,
+          640
+        ]
+      },
+      "armRight": {
+        "parent": "torso",
+        "pivot": [
+          550,
+          350
+        ]
+      },
+      "forearmRight": {
+        "parent": "armRight",
+        "pivot": [
+          610,
+          520
+        ]
+      },
+      "weaponRight": {
+        "parent": "forearmRight",
+        "pivot": [
+          610,
+          630
+        ]
+      },
+      "legBack": {
+        "parent": "root",
+        "pivot": [
+          360,
+          680
+        ]
+      },
+      "legBackLower": {
+        "parent": "legBack",
+        "pivot": [
+          350,
+          900
+        ]
+      },
+      "legFront": {
+        "parent": "root",
+        "pivot": [
+          500,
+          680
+        ]
+      },
+      "legFrontLower": {
+        "parent": "legFront",
+        "pivot": [
+          520,
+          920
+        ]
+      }
+    },
+    "face": {
+      "eyes": [
+        [
+          390,
+          160,
+          17
+        ],
+        [
+          440,
+          158,
+          17
+        ]
+      ],
+      "mouth": [
+        420,
+        210
+      ],
+      "skin": "#d6a088"
+    },
+    "headPoint": [
+      420,
+      160
+    ]
+  },
+  "elowen": {
+    "width": 848,
+    "height": 1264,
+    "atlasWidth": 1600,
+    "atlasHeight": 1494,
+    "drawOrder": [
+      "hair",
+      "cloth-left",
+      "cloth-right",
+      "leg-back-lower",
+      "leg-back-upper",
+      "leg-front-lower",
+      "leg-front-upper",
+      "torso",
+      "arm-left-upper",
+      "arm-left-lower",
+      "arm-right-upper",
+      "arm-right-lower",
+      "head",
+      "weapon-left",
+      "weapon-right"
+    ],
+    "parts": {
+      "weapon-right": {
+        "x": 5,
+        "y": 5,
+        "w": 283,
+        "h": 1129,
+        "cx": 528,
+        "cy": 47,
+        "bone": "weaponRight"
+      },
+      "cloth-left": {
+        "x": 293,
+        "y": 5,
+        "w": 383,
+        "h": 510,
+        "cx": 50,
+        "cy": 543,
+        "bone": "clothLeft"
+      },
+      "cloth-right": {
+        "x": 681,
+        "y": 5,
+        "w": 122,
+        "h": 439,
+        "cx": 424,
+        "cy": 595,
+        "bone": "clothRight"
+      },
+      "torso": {
+        "x": 808,
+        "y": 5,
+        "w": 274,
+        "h": 426,
+        "cx": 271,
+        "cy": 227,
+        "bone": "torso"
+      },
+      "leg-front-lower": {
+        "x": 1087,
+        "y": 5,
+        "w": 97,
+        "h": 390,
+        "cx": 435,
+        "cy": 833,
+        "bone": "legFrontLower"
+      },
+      "leg-back-lower": {
+        "x": 1189,
+        "y": 5,
+        "w": 355,
+        "h": 365,
+        "cx": 86,
+        "cy": 828,
+        "bone": "legBackLower"
+      },
+      "arm-left-lower": {
+        "x": 5,
+        "y": 1139,
+        "w": 241,
+        "h": 350,
+        "cx": 52,
+        "cy": 432,
+        "bone": "forearmLeft"
+      },
+      "arm-right-lower": {
+        "x": 251,
+        "y": 1139,
+        "w": 165,
+        "h": 295,
+        "cx": 533,
+        "cy": 428,
+        "bone": "forearmRight"
+      },
+      "head": {
+        "x": 421,
+        "y": 1139,
+        "w": 217,
+        "h": 246,
+        "cx": 313,
+        "cy": 87,
+        "bone": "head"
+      },
+      "arm-left-upper": {
+        "x": 643,
+        "y": 1139,
+        "w": 206,
+        "h": 242,
+        "cx": 147,
+        "cy": 258,
+        "bone": "armLeft"
+      },
+      "arm-right-upper": {
+        "x": 854,
+        "y": 1139,
+        "w": 157,
+        "h": 232,
+        "cx": 503,
+        "cy": 264,
+        "bone": "armRight"
+      },
+      "leg-front-upper": {
+        "x": 1016,
+        "y": 1139,
+        "w": 36,
+        "h": 201,
+        "cx": 423,
+        "cy": 717,
+        "bone": "legFront"
+      },
+      "leg-back-upper": {
+        "x": 1057,
+        "y": 1139,
+        "w": 38,
+        "h": 182,
+        "cx": 400,
+        "cy": 728,
+        "bone": "legBack"
+      },
+      "hair": {
+        "x": 1100,
+        "y": 1139,
+        "w": 121,
+        "h": 96,
+        "cx": 209,
+        "cy": 198,
+        "bone": "hair"
+      }
+    },
+    "root": [
+      424,
+      1210
+    ],
+    "baseScale": 0.245,
+    "bones": {
+      "root": {
+        "parent": null,
+        "pivot": [
+          424,
+          1210
+        ]
+      },
+      "torso": {
+        "parent": "root",
+        "pivot": [
+          424,
+          620
+        ]
+      },
+      "head": {
+        "parent": "torso",
+        "pivot": [
+          435,
+          280
+        ]
+      },
+      "hair": {
+        "parent": "head",
+        "pivot": [
+          420,
+          260
+        ]
+      },
+      "clothLeft": {
+        "parent": "root",
+        "pivot": [
+          360,
+          560
+        ]
+      },
+      "clothRight": {
+        "parent": "root",
+        "pivot": [
+          500,
+          560
+        ]
+      },
+      "armLeft": {
+        "parent": "torso",
+        "pivot": [
+          310,
+          340
+        ]
+      },
+      "forearmLeft": {
+        "parent": "armLeft",
+        "pivot": [
+          230,
+          510
+        ]
+      },
+      "weaponLeft": {
+        "parent": "forearmLeft",
+        "pivot": [
+          190,
+          540
+        ]
+      },
+      "armRight": {
+        "parent": "torso",
+        "pivot": [
+          540,
+          360
+        ]
+      },
+      "forearmRight": {
+        "parent": "armRight",
+        "pivot": [
+          630,
+          430
+        ]
+      },
+      "weaponRight": {
+        "parent": "forearmRight",
+        "pivot": [
+          690,
+          430
+        ]
+      },
+      "legBack": {
+        "parent": "root",
+        "pivot": [
+          360,
+          680
+        ]
+      },
+      "legBackLower": {
+        "parent": "legBack",
+        "pivot": [
+          350,
+          900
+        ]
+      },
+      "legFront": {
+        "parent": "root",
+        "pivot": [
+          500,
+          680
+        ]
+      },
+      "legFrontLower": {
+        "parent": "legFront",
+        "pivot": [
+          520,
+          920
+        ]
+      }
+    },
+    "face": {
+      "eyes": [
+        [
+          410,
+          180,
+          17
+        ],
+        [
+          460,
+          180,
+          17
+        ]
+      ],
+      "mouth": [
+        438,
+        230
+      ],
+      "skin": "#b97857"
+    },
+    "headPoint": [
+      440,
+      185
+    ]
+  },
+  "brakar": {
+    "width": 848,
+    "height": 1264,
+    "atlasWidth": 1600,
+    "atlasHeight": 1015,
+    "drawOrder": [
+      "hair",
+      "cloth-left",
+      "cloth-right",
+      "leg-back-lower",
+      "leg-back-upper",
+      "leg-front-lower",
+      "leg-front-upper",
+      "torso",
+      "arm-left-upper",
+      "arm-left-lower",
+      "arm-right-upper",
+      "arm-right-lower",
+      "head",
+      "weapon-left",
+      "weapon-right"
+    ],
+    "parts": {
+      "cloth-left": {
+        "x": 5,
+        "y": 5,
+        "w": 327,
+        "h": 480,
+        "cx": 107,
+        "cy": 571,
+        "bone": "clothLeft"
+      },
+      "cloth-right": {
+        "x": 337,
+        "y": 5,
+        "w": 359,
+        "h": 448,
+        "cx": 424,
+        "cy": 594,
+        "bone": "clothRight"
+      },
+      "torso": {
+        "x": 701,
+        "y": 5,
+        "w": 329,
+        "h": 427,
+        "cx": 247,
+        "cy": 226,
+        "bone": "torso"
+      },
+      "leg-back-lower": {
+        "x": 1035,
+        "y": 5,
+        "w": 279,
+        "h": 420,
+        "cx": 162,
+        "cy": 828,
+        "bone": "legBackLower"
+      },
+      "leg-front-lower": {
+        "x": 5,
+        "y": 490,
+        "w": 298,
+        "h": 373,
+        "cx": 437,
+        "cy": 833,
+        "bone": "legFrontLower"
+      },
+      "arm-left-lower": {
+        "x": 308,
+        "y": 490,
+        "w": 207,
+        "h": 316,
+        "cx": 65,
+        "cy": 423,
+        "bone": "forearmLeft"
+      },
+      "arm-right-lower": {
+        "x": 520,
+        "y": 490,
+        "w": 221,
+        "h": 295,
+        "cx": 551,
+        "cy": 428,
+        "bone": "forearmRight"
+      },
+      "head": {
+        "x": 746,
+        "y": 490,
+        "w": 249,
+        "h": 261,
+        "cx": 306,
+        "cy": 72,
+        "bone": "head"
+      },
+      "arm-right-upper": {
+        "x": 1000,
+        "y": 490,
+        "w": 151,
+        "h": 244,
+        "cx": 515,
+        "cy": 252,
+        "bone": "armRight"
+      },
+      "arm-left-upper": {
+        "x": 1156,
+        "y": 490,
+        "w": 210,
+        "h": 226,
+        "cx": 131,
+        "cy": 258,
+        "bone": "armLeft"
+      },
+      "leg-front-upper": {
+        "x": 1371,
+        "y": 490,
+        "w": 41,
+        "h": 203,
+        "cx": 423,
+        "cy": 716,
+        "bone": "legFront"
+      },
+      "leg-back-upper": {
+        "x": 1417,
+        "y": 490,
+        "w": 43,
+        "h": 182,
+        "cx": 397,
+        "cy": 727,
+        "bone": "legBack"
+      },
+      "hair": {
+        "x": 5,
+        "y": 868,
+        "w": 500,
+        "h": 142,
+        "cx": 154,
+        "cy": 175,
+        "bone": "hair"
+      }
+    },
+    "root": [
+      424,
+      1210
+    ],
+    "baseScale": 0.232,
+    "bones": {
+      "root": {
+        "parent": null,
+        "pivot": [
+          424,
+          1210
+        ]
+      },
+      "torso": {
+        "parent": "root",
+        "pivot": [
+          424,
+          580
+        ]
+      },
+      "head": {
+        "parent": "torso",
+        "pivot": [
+          435,
+          280
+        ]
+      },
+      "hair": {
+        "parent": "head",
+        "pivot": [
+          420,
+          260
+        ]
+      },
+      "clothLeft": {
+        "parent": "root",
+        "pivot": [
+          360,
+          560
+        ]
+      },
+      "clothRight": {
+        "parent": "root",
+        "pivot": [
+          500,
+          560
+        ]
+      },
+      "armLeft": {
+        "parent": "torso",
+        "pivot": [
+          270,
+          350
+        ]
+      },
+      "forearmLeft": {
+        "parent": "armLeft",
+        "pivot": [
+          180,
+          540
+        ]
+      },
+      "weaponLeft": {
+        "parent": "forearmLeft",
+        "pivot": [
+          190,
+          540
+        ]
+      },
+      "armRight": {
+        "parent": "torso",
+        "pivot": [
+          580,
+          350
+        ]
+      },
+      "forearmRight": {
+        "parent": "armRight",
+        "pivot": [
+          670,
+          540
+        ]
+      },
+      "weaponRight": {
+        "parent": "forearmRight",
+        "pivot": [
+          680,
+          450
+        ]
+      },
+      "legBack": {
+        "parent": "root",
+        "pivot": [
+          340,
+          700
+        ]
+      },
+      "legBackLower": {
+        "parent": "legBack",
+        "pivot": [
+          320,
+          930
+        ]
+      },
+      "legFront": {
+        "parent": "root",
+        "pivot": [
+          520,
+          700
+        ]
+      },
+      "legFrontLower": {
+        "parent": "legFront",
+        "pivot": [
+          540,
+          930
+        ]
+      }
+    },
+    "face": {
+      "eyes": [
+        [
+          432,
+          155,
+          15
+        ],
+        [
+          474,
+          163,
+          14
+        ]
+      ],
+      "mouth": [
+        455,
+        225
+      ],
+      "skin": "#9c5c41"
+    },
+    "headPoint": [
+      440,
+      170
+    ]
+  }
+}

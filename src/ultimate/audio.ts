@@ -1,5 +1,24 @@
 import type { HeroId } from './rig'
 
+const HERO_CHORDS: Record<HeroId, number[]> = {
+  kaelis: [55, 82.41, 110, 164.81],
+  nyxara: [61.74, 92.5, 123.47, 185],
+  talys: [65.41, 98, 130.81, 196],
+  ilya: [73.42, 110, 146.83, 220],
+  nox: [51.91, 77.78, 103.83, 155.56],
+  elowen: [65.41, 98, 164.81, 196],
+  brakar: [43.65, 65.41, 87.31, 130.81],
+}
+const HERO_MELODIES: Record<HeroId, number[]> = {
+  kaelis: [220, 277.18, 329.63, 440],
+  nyxara: [246.94, 311.13, 369.99, 493.88],
+  talys: [261.63, 329.63, 392, 523.25],
+  ilya: [293.66, 369.99, 440, 587.33],
+  nox: [207.65, 246.94, 311.13, 415.3],
+  elowen: [261.63, 329.63, 392, 493.88],
+  brakar: [174.61, 220, 261.63, 349.23],
+}
+
 export type UltimateSound =
   | 'trigger'
   | 'charge'
@@ -39,7 +58,7 @@ export class ZenithAudio {
     this.score.connect(this.master!)
 
     // A slow, original suspended chord under the action.
-    const chord = this.hero === 'kaelis' ? [55, 82.41, 110, 164.81] : [61.74, 92.5, 123.47, 185]
+    const chord = HERO_CHORDS[this.hero]
     chord.forEach((frequency, index) => {
       const oscillator = this.context!.createOscillator()
       const gain = this.context!.createGain()
@@ -93,7 +112,7 @@ export class ZenithAudio {
         this.tone(180, 0.35, 'triangle', 0.08, 520)
         break
       case 'aerial':
-        const notes = this.hero === 'kaelis' ? [220, 277.18, 329.63, 440] : [246.94, 311.13, 369.99, 493.88]
+        const notes = HERO_MELODIES[this.hero]
         notes.forEach((frequency, index) => {
           this.tone(frequency, 0.9, index === 0 ? 'triangle' : 'sine', 0.065, frequency * 1.01, index * 0.025)
         })
@@ -109,6 +128,7 @@ export class ZenithAudio {
         ;[1240, 1860, 2480].forEach((frequency, index) => {
           this.tone(frequency, 0.4, 'sine', 0.045, frequency * 0.55, index * 0.012)
         })
+        this.elementalImpact()
         break
       case 'roar':
         this.tone(96, 0.82, 'sawtooth', 0.12, 43)
@@ -127,6 +147,41 @@ export class ZenithAudio {
         ;[329.63, 440, 554.37].forEach((frequency, index) => {
           this.tone(frequency, 0.65, 'sine', 0.04, frequency, index * 0.08)
         })
+        break
+    }
+  }
+
+  private elementalImpact() {
+    switch (this.hero) {
+      case 'talys':
+        this.noise(0.32, 7200, 0.16, 900)
+        this.tone(1760, 0.22, 'square', 0.07, 180)
+        this.tone(98, 0.7, 'sawtooth', 0.1, 42)
+        break
+      case 'ilya':
+        ;[1760, 2349.32, 3135.96].forEach((frequency, index) => {
+          this.tone(frequency, 0.85, 'sine', 0.07, frequency * 0.98, index * 0.035)
+        })
+        this.noise(0.5, 6200, 0.08, 2400)
+        break
+      case 'nox':
+        this.noise(0.62, 3200, 0.12, 180)
+        this.tone(233.08, 0.7, 'sawtooth', 0.075, 58)
+        this.tone(246.94, 0.62, 'triangle', 0.06, 62)
+        break
+      case 'elowen':
+        this.noise(0.5, 740, 0.1, 120)
+        ;[261.63, 329.63, 392].forEach((frequency, index) => {
+          this.tone(frequency, 0.9, 'triangle', 0.065, frequency * 0.75, index * 0.045)
+        })
+        break
+      case 'brakar':
+        this.tone(48, 1.1, 'sine', 0.34, 24)
+        this.noise(0.95, 520, 0.25, 45)
+        this.noise(0.28, 1700, 0.09, 240)
+        break
+      case 'kaelis':
+      case 'nyxara':
         break
     }
   }

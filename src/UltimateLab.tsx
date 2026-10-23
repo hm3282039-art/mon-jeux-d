@@ -19,8 +19,9 @@ import {
 } from 'lucide-react'
 import { TARGET_MAX_HP, ZenithEngine } from './ultimate/engine'
 import type { EngineSnapshot, GameplayEvent } from './ultimate/engine'
-import { HERO_PRESENTATION } from './ultimate/rig'
+import { HERO_PRESENTATION, isNewHero } from './ultimate/rig'
 import type { HeroId } from './ultimate/rig'
+import { NEW_STORYBOARDS } from './ultimate/new-heroes'
 import type { UltimateMode } from './ultimate/renderer'
 import { formatTime } from './ultimate/math'
 
@@ -58,6 +59,7 @@ const STORYBOARDS: Record<HeroId, Array<[string, string, string, string]>> = {
     ['4,50 – 5,65', 'VI', 'Collision astrale', 'Dégâts uniques à 4,50 s ; marque, cratère, réaction et rugissement du dragon.'],
     ['5,65 – 8,00', 'VII', 'Silence cosmique', 'Dissipation des astres, descente contrôlée et retour synchronisé au combat.'],
   ],
+  ...NEW_STORYBOARDS,
 }
 
 declare global {
@@ -109,6 +111,13 @@ export default function UltimateLab() {
 
   const active = snapshot.phase === 'playing' || snapshot.phase === 'paused'
   const presentation = HERO_PRESENTATION[snapshot.hero]
+  const titleWords = presentation.ultimate.split(' ')
+  const titleAccent = titleWords.pop() ?? presentation.ultimate
+  const ultimateDescription = snapshot.hero === 'kaelis'
+    ? 'Kaelis déploie ses ailes de phénix, exécute une rotation aérienne et fend la garde du Dragon du Zénith.'
+    : snapshot.hero === 'nyxara'
+      ? 'Nyxara invoque un dragon astral articulé et le précipite contre le Dragon du Zénith dans une collision cosmique.'
+      : isNewHero(snapshot.hero) ? NEW_STORYBOARDS[snapshot.hero][4][3] : ''
   const hpPercent = snapshot.displayedHp / TARGET_MAX_HP * 100
   const progress = snapshot.time / snapshot.duration * 100
   const impactProgress = snapshot.impactAt / snapshot.duration * 100
@@ -129,14 +138,14 @@ export default function UltimateLab() {
           <span><strong>ASTRÉA</strong><small>LES ÉCHOS DU CIEL</small></span>
         </a>
         <div className="lab-breadcrumb"><span>LABORATOIRE DE COMBAT</span><ChevronRight size={14} /><strong>ULTIMES CINÉMA</strong></div>
-        <div className="prototype-badge"><i /> PROTOTYPE ISOLÉ · 03</div>
+        <div className="prototype-badge"><i /> PROTOTYPE ISOLÉ · 04</div>
       </header>
 
       <section className="lab-title-row">
         <div>
           <p className="eyebrow"><Focus size={14} /> ANIMATION TEMPS RÉEL · RIGS ARTICULÉS</p>
-          <h1>{snapshot.hero === 'kaelis' ? <>Aube <em>Incarnée</em></> : <>Requiem des <em>Constellations</em></>}</h1>
-          <p>L’ultime cinéma de {presentation.name}, {presentation.title.toLowerCase()}. Son apparence d’origine est conservée dans un rig animé partie par partie dans votre navigateur.</p>
+          <h1>{titleWords.join(' ')} <em>{titleAccent}</em></h1>
+          <p>L’ultime cinéma de {presentation.name}, {presentation.title.toLowerCase()}. Son design anime est conservé dans un rig animé partie par partie dans votre navigateur.</p>
         </div>
         <div className="tech-stamps" aria-label="Caractéristiques techniques">
           <span><Activity size={14} /> {snapshot.fps} FPS réels</span>
@@ -255,9 +264,9 @@ export default function UltimateLab() {
           <section className="ultimate-card">
             <div className="ultimate-card-heading">
               <div className="nexus-icon">{snapshot.hero === 'kaelis' ? <Sparkles size={24} /> : <CircleGauge size={24} />}</div>
-              <div><span>ULTIME · {snapshot.hero === 'kaelis' ? 'LUMIÈRE' : 'COSMOS'}</span><h2>{presentation.ultimate}</h2></div>
+              <div><span>ULTIME · {presentation.element.split(' · ')[0].toUpperCase()}</span><h2>{presentation.ultimate}</h2></div>
             </div>
-            <p>{snapshot.hero === 'kaelis' ? 'Kaelis déploie ses ailes de phénix, exécute une rotation aérienne et fend la garde du Dragon du Zénith.' : 'Nyxara invoque un dragon astral articulé et le précipite contre le Dragon du Zénith dans une collision cosmique.'}</p>
+            <p>{ultimateDescription}</p>
             <div className="ultimate-stats">
               <div><span>DÉGÂTS</span><strong>{numberFormat.format(snapshot.damage)}</strong><small>{presentation.element}</small></div>
               <div><span>IMPACT</span><strong>{snapshot.mode === 'full' ? '4,50 s' : snapshot.mode === 'short' ? '1,35 s' : '0,32 s'}</strong><small>Événement unique</small></div>
@@ -301,7 +310,7 @@ export default function UltimateLab() {
         )}
       </section>
 
-      <footer className="lab-footer"><span>Prototype isolé · aucune modification du hub ou du combat principal</span><span>Designs de Kaelis et Nyxara conservés · nouvelle animation articulée temps réel.</span></footer>
+      <footer className="lab-footer"><span>Prototype isolé · aucune modification du hub ou du combat principal</span><span>Sept héros anime sélectionnables · animation articulée et effets temps réel.</span></footer>
     </main>
   )
 }

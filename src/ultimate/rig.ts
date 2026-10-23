@@ -1,7 +1,10 @@
 import rawRigData from './rigs.json'
+import rawNewRigData from './new-rigs.json'
+import { NEW_HEROES } from './new-heroes'
+import type { NewHeroId, HeroArchetype } from './new-heroes'
 import { radians } from './math'
 
-export type HeroId = 'kaelis' | 'nyxara'
+export type HeroId = 'kaelis' | 'nyxara' | NewHeroId
 export type RigPose = Record<string, number>
 export type RigTransform = {
   x: number
@@ -32,10 +35,23 @@ type HeroRigData = {
 }
 
 type RigData = Record<HeroId, HeroRigData>
+type FaceMeta = {
+  eyes: Array<[number, number, number]>
+  mouth: [number, number]
+  skin: string
+}
+type NewRigMeta = HeroRigData & {
+  root: [number, number]
+  baseScale: number
+  bones: Record<string, BoneDefinition>
+  face: FaceMeta
+  headPoint: [number, number]
+}
 export type Matrix = [number, number, number, number, number, number]
 type BoneDefinition = { parent: string | null; pivot: [number, number] }
 
-const data = rawRigData as unknown as RigData
+const newData = rawNewRigData as unknown as Record<NewHeroId, NewRigMeta>
+const data = { ...rawRigData, ...newData } as unknown as RigData
 const IDENTITY: Matrix = [1, 0, 0, 1, 0, 0]
 
 const BONES: Record<HeroId, Record<string, BoneDefinition>> = {
@@ -76,19 +92,44 @@ const BONES: Record<HeroId, Record<string, BoneDefinition>> = {
     legFront: { parent: 'root', pivot: [410, 650] },
     legFrontLower: { parent: 'legFront', pivot: [450, 870] },
   },
+  talys: newData.talys.bones,
+  ilya: newData.ilya.bones,
+  nox: newData.nox.bones,
+  elowen: newData.elowen.bones,
+  brakar: newData.brakar.bones,
 }
 
 const ROOTS: Record<HeroId, [number, number]> = {
   kaelis: [450, 1120],
   nyxara: [450, 1100],
+  talys: newData.talys.root,
+  ilya: newData.ilya.root,
+  nox: newData.nox.root,
+  elowen: newData.elowen.root,
+  brakar: newData.brakar.root,
 }
 
 export const BASE_RIG_SCALE: Record<HeroId, number> = {
   kaelis: 0.255,
   nyxara: 0.265,
+  talys: newData.talys.baseScale,
+  ilya: newData.ilya.baseScale,
+  nox: newData.nox.baseScale,
+  elowen: newData.elowen.baseScale,
+  brakar: newData.brakar.baseScale,
 }
 
-export const HERO_PRESENTATION: Record<HeroId, {
+export const RIG_HEAD_POINTS: Record<HeroId, [number, number]> = {
+  kaelis: [455, 180],
+  nyxara: [435, 225],
+  talys: newData.talys.headPoint,
+  ilya: newData.ilya.headPoint,
+  nox: newData.nox.headPoint,
+  elowen: newData.elowen.headPoint,
+  brakar: newData.brakar.headPoint,
+}
+
+export type HeroPresentation = {
   name: string
   title: string
   ultimate: string
@@ -98,7 +139,14 @@ export const HERO_PRESENTATION: Record<HeroId, {
   status: string
   statusDetail: string
   subtitle: string
-}> = {
+  archetype?: HeroArchetype
+  color?: string
+  rgb?: string
+  secondary?: string
+  dark?: string
+}
+
+export const HERO_PRESENTATION: Record<HeroId, HeroPresentation> = {
   kaelis: {
     name: 'Kaelis',
     title: 'La Lame de l’Aube',
@@ -121,6 +169,11 @@ export const HERO_PRESENTATION: Record<HeroId, {
     statusDetail: 'Vitesse −20 % · 2 tours',
     subtitle: '« Les étoiles ont déjà choisi. »',
   },
+  ...NEW_HEROES,
+}
+
+export function isNewHero(hero: HeroId): hero is NewHeroId {
+  return hero in NEW_HEROES
 }
 
 function multiply(left: Matrix, right: Matrix): Matrix {
@@ -201,6 +254,11 @@ export class RigLibrary {
     this.images = {
       kaelis: this.load('./assets/ultimate/kaelis-rig.webp'),
       nyxara: this.load('./assets/ultimate/nyxara-rig.webp'),
+      talys: this.load('./assets/ultimate/talys-rig.webp'),
+      ilya: this.load('./assets/ultimate/ilya-rig.webp'),
+      nox: this.load('./assets/ultimate/nox-rig.webp'),
+      elowen: this.load('./assets/ultimate/elowen-rig.webp'),
+      brakar: this.load('./assets/ultimate/brakar-rig.webp'),
     }
   }
 
@@ -258,15 +316,18 @@ export class RigLibrary {
     ambient: number,
     charge: number,
   ) {
-    const blinkCycle = ambient % (hero === 'kaelis' ? 4.1 : 3.7)
-    const naturalBlink = blinkCycle > 3.58 && hero === 'nyxara' || blinkCycle > 3.96 && hero === 'kaelis' ? 0.08 : 1
+    const heroIndex = Object.keys(HERO_PRESENTATION).indexOf(hero)
+    const blinkDuration = 3.7 + heroIndex % 4 * 0.17
+    const blinkCycle = ambient % blinkDuration
+    const naturalBlink = blinkCycle > blinkDuration - 0.14 ? 0.08 : 1
     const eye = Math.max(0.06, Math.min(1, (pose.eye ?? 1) * naturalBlink))
     const shout = pose.shout || 0
-    const eyes: Array<[number, number, number]> = hero === 'kaelis'
+    const customFace = isNewHero(hero) ? newData[hero].face : null
+    const eyes: Array<[number, number, number]> = customFace?.eyes ?? (hero === 'kaelis'
       ? [[429, 184, 18], [482, 183, 17]]
-      : [[413, 239, 17], [459, 238, 17]]
-    const skin = hero === 'kaelis' ? '#d9a17d' : '#d9a6b5'
-    const glow = hero === 'kaelis' ? '#ffe28a' : '#83fff4'
+      : [[413, 239, 17], [459, 238, 17]])
+    const skin = customFace?.skin ?? (hero === 'kaelis' ? '#d9a17d' : '#d9a6b5')
+    const glow = HERO_PRESENTATION[hero].color ?? (hero === 'kaelis' ? '#ffe28a' : '#83fff4')
     context.save()
     context.transform(head[0], head[1], head[2], head[3], head[4], head[5])
     if (eye < 0.98) {
@@ -304,7 +365,7 @@ export class RigLibrary {
       context.restore()
     }
     if (shout > 0.08) {
-      const [mouthX, mouthY] = hero === 'kaelis' ? [457, 224] : [438, 276]
+      const [mouthX, mouthY] = customFace?.mouth ?? (hero === 'kaelis' ? [457, 224] : [438, 276])
       context.fillStyle = hero === 'kaelis' ? '#703c3b' : '#77374f'
       context.beginPath()
       context.ellipse(mouthX, mouthY, 7 + shout * 3, 1.2 + shout * 4.5, 0, 0, Math.PI * 2)

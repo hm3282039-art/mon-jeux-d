@@ -286,7 +286,7 @@ export class ZenithEngine {
 
   private updateSounds() {
     SOUND_EVENTS[this.mode].forEach(event => {
-      if (this.hero === 'nyxara' && event.sound === 'step') return
+      if ((this.hero === 'nyxara' || this.hero === 'elowen') && event.sound === 'step') return
       const key = `${event.at}:${event.sound}`
       if (this.time >= event.at && !this.firedSounds.has(key)) {
         this.firedSounds.add(key)
