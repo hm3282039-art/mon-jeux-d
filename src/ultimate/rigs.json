@@ -1,0 +1,459 @@
+{
+  "kaelis": {
+    "width": 896,
+    "height": 1200,
+    "atlasWidth": 1600,
+    "atlasHeight": 1198,
+    "drawOrder": [
+      "cape-tip",
+      "cape-upper",
+      "skirt-back",
+      "leg-back-lower",
+      "leg-back-upper",
+      "arm-weapon-upper",
+      "arm-weapon-lower",
+      "leg-front-lower",
+      "leg-front-upper",
+      "skirt-front",
+      "torso",
+      "arm-free-upper",
+      "arm-free-lower",
+      "head",
+      "hair-tail",
+      "weapon",
+      "hand-weapon"
+    ],
+    "parts": {
+      "weapon": {
+        "x": 5,
+        "y": 5,
+        "w": 467,
+        "h": 866,
+        "cx": 106,
+        "cy": 287,
+        "bone": "weapon",
+        "pivot": [
+          185,
+          435
+        ]
+      },
+      "cape-tip": {
+        "x": 477,
+        "y": 5,
+        "w": 243,
+        "h": 475,
+        "cx": 605,
+        "cy": 521,
+        "bone": "capeTip",
+        "pivot": [
+          650,
+          640
+        ]
+      },
+      "cape-upper": {
+        "x": 725,
+        "y": 5,
+        "w": 188,
+        "h": 468,
+        "cx": 525,
+        "cy": 225,
+        "bone": "cape",
+        "pivot": [
+          565,
+          315
+        ]
+      },
+      "leg-front-lower": {
+        "x": 918,
+        "y": 5,
+        "w": 156,
+        "h": 396,
+        "cx": 508,
+        "cy": 753,
+        "bone": "legFrontLower",
+        "pivot": [
+          550,
+          800
+        ]
+      },
+      "torso": {
+        "x": 1079,
+        "y": 5,
+        "w": 303,
+        "h": 350,
+        "cx": 328,
+        "cy": 233,
+        "bone": "torso",
+        "pivot": [
+          450,
+          540
+        ]
+      },
+      "skirt-front": {
+        "x": 1387,
+        "y": 5,
+        "w": 180,
+        "h": 337,
+        "cx": 358,
+        "cy": 536,
+        "bone": "skirt",
+        "pivot": [
+          450,
+          545
+        ]
+      },
+      "leg-front-upper": {
+        "x": 5,
+        "y": 876,
+        "w": 121,
+        "h": 317,
+        "cx": 507,
+        "cy": 511,
+        "bone": "legFront",
+        "pivot": [
+          515,
+          565
+        ]
+      },
+      "leg-back-lower": {
+        "x": 131,
+        "y": 876,
+        "w": 145,
+        "h": 253,
+        "cx": 267,
+        "cy": 860,
+        "bone": "legBackLower",
+        "pivot": [
+          375,
+          800
+        ]
+      },
+      "arm-free-lower": {
+        "x": 281,
+        "y": 876,
+        "w": 100,
+        "h": 220,
+        "cx": 558,
+        "cy": 453,
+        "bone": "forearmFree",
+        "pivot": [
+          610,
+          490
+        ]
+      },
+      "head": {
+        "x": 386,
+        "y": 876,
+        "w": 163,
+        "h": 209,
+        "cx": 373,
+        "cy": 83,
+        "bone": "head",
+        "pivot": [
+          455,
+          260
+        ]
+      },
+      "skirt-back": {
+        "x": 554,
+        "y": 876,
+        "w": 68,
+        "h": 190,
+        "cx": 260,
+        "cy": 786,
+        "bone": "skirt",
+        "pivot": [
+          435,
+          545
+        ]
+      },
+      "arm-free-upper": {
+        "x": 627,
+        "y": 876,
+        "w": 119,
+        "h": 181,
+        "cx": 543,
+        "cy": 313,
+        "bone": "armFree",
+        "pivot": [
+          585,
+          365
+        ]
+      },
+      "hair-tail": {
+        "x": 751,
+        "y": 876,
+        "w": 65,
+        "h": 175,
+        "cx": 373,
+        "cy": 158,
+        "bone": "hair",
+        "pivot": [
+          405,
+          190
+        ]
+      },
+      "arm-weapon-upper": {
+        "x": 821,
+        "y": 876,
+        "w": 53,
+        "h": 170,
+        "cx": 279,
+        "cy": 300,
+        "bone": "armWeapon",
+        "pivot": [
+          345,
+          340
+        ]
+      },
+      "hand-weapon": {
+        "x": 879,
+        "y": 876,
+        "w": 75,
+        "h": 87,
+        "cx": 148,
+        "cy": 395,
+        "bone": "forearmWeapon",
+        "pivot": [
+          185,
+          435
+        ]
+      },
+      "arm-weapon-lower": {
+        "x": 959,
+        "y": 876,
+        "w": 94,
+        "h": 70,
+        "cx": 219,
+        "cy": 399,
+        "bone": "forearmWeapon",
+        "pivot": [
+          265,
+          435
+        ]
+      }
+    }
+  },
+  "nyxara": {
+    "width": 896,
+    "height": 1200,
+    "atlasWidth": 1600,
+    "atlasHeight": 1097,
+    "drawOrder": [
+      "hair-left",
+      "hair-right",
+      "dress-left",
+      "dress-right",
+      "leg-back-lower",
+      "leg-back-upper",
+      "leg-front-lower",
+      "leg-front-upper",
+      "dress-center",
+      "arm-left-upper",
+      "torso",
+      "head",
+      "arm-right-upper",
+      "arm-right-lower",
+      "arm-left-lower",
+      "staff",
+      "hand-right"
+    ],
+    "parts": {
+      "staff": {
+        "x": 5,
+        "y": 5,
+        "w": 270,
+        "h": 554,
+        "cx": 573,
+        "cy": 109,
+        "bone": "staff",
+        "pivot": [
+          635,
+          515
+        ]
+      },
+      "hair-right": {
+        "x": 280,
+        "y": 5,
+        "w": 365,
+        "h": 441,
+        "cx": 498,
+        "cy": 235,
+        "bone": "hairRight",
+        "pivot": [
+          485,
+          280
+        ]
+      },
+      "dress-right": {
+        "x": 650,
+        "y": 5,
+        "w": 299,
+        "h": 438,
+        "cx": 549,
+        "cy": 568,
+        "bone": "dressRight",
+        "pivot": [
+          480,
+          520
+        ]
+      },
+      "hair-left": {
+        "x": 954,
+        "y": 5,
+        "w": 354,
+        "h": 405,
+        "cx": 18,
+        "cy": 268,
+        "bone": "hairLeft",
+        "pivot": [
+          385,
+          280
+        ]
+      },
+      "dress-center": {
+        "x": 5,
+        "y": 564,
+        "w": 365,
+        "h": 397,
+        "cx": 208,
+        "cy": 503,
+        "bone": "dressCenter",
+        "pivot": [
+          435,
+          520
+        ]
+      },
+      "dress-left": {
+        "x": 375,
+        "y": 564,
+        "w": 266,
+        "h": 374,
+        "cx": 65,
+        "cy": 640,
+        "bone": "dressLeft",
+        "pivot": [
+          390,
+          520
+        ]
+      },
+      "torso": {
+        "x": 646,
+        "y": 564,
+        "w": 232,
+        "h": 300,
+        "cx": 317,
+        "cy": 278,
+        "bone": "torso",
+        "pivot": [
+          440,
+          520
+        ]
+      },
+      "leg-front-lower": {
+        "x": 883,
+        "y": 564,
+        "w": 95,
+        "h": 246,
+        "cx": 418,
+        "cy": 854,
+        "bone": "legFrontLower",
+        "pivot": [
+          450,
+          870
+        ]
+      },
+      "head": {
+        "x": 983,
+        "y": 564,
+        "w": 157,
+        "h": 176,
+        "cx": 365,
+        "cy": 152,
+        "bone": "head",
+        "pivot": [
+          435,
+          300
+        ]
+      },
+      "arm-right-upper": {
+        "x": 1145,
+        "y": 564,
+        "w": 105,
+        "h": 171,
+        "cx": 488,
+        "cy": 303,
+        "bone": "armRight",
+        "pivot": [
+          510,
+          355
+        ]
+      },
+      "leg-back-lower": {
+        "x": 1255,
+        "y": 564,
+        "w": 65,
+        "h": 157,
+        "cx": 499,
+        "cy": 879,
+        "bone": "legBackLower",
+        "pivot": [
+          500,
+          870
+        ]
+      },
+      "arm-left-lower": {
+        "x": 1325,
+        "y": 564,
+        "w": 132,
+        "h": 145,
+        "cx": 211,
+        "cy": 308,
+        "bone": "forearmLeft",
+        "pivot": [
+          305,
+          405
+        ]
+      },
+      "arm-left-upper": {
+        "x": 1462,
+        "y": 564,
+        "w": 108,
+        "h": 137,
+        "cx": 285,
+        "cy": 316,
+        "bone": "armLeft",
+        "pivot": [
+          365,
+          355
+        ]
+      },
+      "arm-right-lower": {
+        "x": 5,
+        "y": 966,
+        "w": 82,
+        "h": 126,
+        "cx": 543,
+        "cy": 408,
+        "bone": "forearmRight",
+        "pivot": [
+          575,
+          450
+        ]
+      },
+      "hand-right": {
+        "x": 92,
+        "y": 966,
+        "w": 70,
+        "h": 66,
+        "cx": 603,
+        "cy": 482,
+        "bone": "forearmRight",
+        "pivot": [
+          635,
+          515
+        ]
+      }
+    }
+  }
+}

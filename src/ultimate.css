@@ -95,6 +95,24 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 .tech-stamps span { display: flex; align-items: center; gap: 6px; padding: 7px 9px; color: #8ba3b7; background: rgba(13, 25, 43, 0.6); border: 1px solid var(--lab-line); border-radius: 5px; white-space: nowrap; font-size: 9px; }
 .tech-stamps svg { color: #5eb9c9; }
 
+.ultimate-lab.hero-kaelis { --lab-cyan: #f0cd79; --lab-gold: #ffdc8d; }
+.ultimate-lab.hero-nyxara { --lab-cyan: #b9a4ff; --lab-gold: #d4b8ff; }
+.hero-nyxara .ultimate-card-heading h2 { font-size: 13px; }
+.hero-tabs { max-width: 1540px; margin: 0 auto 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hero-tab { position: relative; display: flex; align-items: center; gap: 12px; min-height: 65px; padding: 6px 14px 6px 7px; color: #91a5b8; text-align: left; border: 1px solid var(--lab-line); border-radius: 8px; background: linear-gradient(115deg, rgba(15, 27, 46, 0.86), rgba(8, 16, 30, 0.78)); cursor: pointer; transition: border-color 160ms, background 160ms, transform 160ms; }
+.hero-tab:hover:not(:disabled) { transform: translateY(-1px); border-color: rgba(151, 200, 219, 0.36); }
+.hero-tab img { width: 49px; height: 51px; object-fit: cover; object-position: 50% 12%; border: 1px solid rgba(164, 195, 211, 0.22); border-radius: 5px; background: #101a2c; }
+.hero-tab > span { display: grid; grid-template-columns: auto 1fr; align-items: baseline; column-gap: 9px; min-width: 0; }
+.hero-tab small { grid-column: 1 / 3; color: #6e8498; font-size: 7px; letter-spacing: 0.08em; }
+.hero-tab strong { color: #d8e6ef; font: 500 15px Cinzel, serif; }
+.hero-tab em { overflow: hidden; color: #8097aa; font-size: 9px; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.hero-tab > i { margin-left: auto; display: grid; place-items: center; color: #627c90; }
+.hero-tab.is-selected { background: linear-gradient(115deg, rgba(35, 52, 67, 0.94), rgba(11, 23, 39, 0.9)); }
+.hero-tab-kaelis.is-selected { border-color: rgba(240, 199, 108, 0.52); box-shadow: inset 2px 0 #e7bd64; }
+.hero-tab-kaelis.is-selected > i, .hero-tab-kaelis.is-selected em { color: #e5c379; }
+.hero-tab-nyxara.is-selected { border-color: rgba(176, 140, 241, 0.55); box-shadow: inset 2px 0 #ac86e9; }
+.hero-tab-nyxara.is-selected > i, .hero-tab-nyxara.is-selected em { color: #c3a4f3; }
+
 .lab-layout { max-width: 1540px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 298px; gap: 18px; align-items: start; }
 .battle-column { min-width: 0; }
 .battle-frame {
@@ -113,7 +131,7 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 .battle-hud.is-visible { opacity: 1; transform: translateY(0); }
 .combatant { color: #effaff; text-shadow: 0 2px 6px #030916; }
 .hero-combatant { display: flex; align-items: center; gap: 9px; min-width: 168px; }
-.hero-combatant img { width: 48px; height: 48px; object-fit: cover; border: 1px solid #d6bc78; border-radius: 6px; box-shadow: 0 0 0 2px rgba(5, 14, 29, 0.75), 0 4px 14px rgba(0, 0, 0, 0.4); }
+.hero-combatant img { width: 48px; height: 48px; object-fit: cover; object-position: 50% 13%; border: 1px solid #d6bc78; border-radius: 6px; box-shadow: 0 0 0 2px rgba(5, 14, 29, 0.75), 0 4px 14px rgba(0, 0, 0, 0.4); }
 .hero-combatant > div { min-width: 108px; }
 .combatant-kicker { display: block; color: #9cdce6; font-size: 7px; font-weight: 700; letter-spacing: 0.12em; }
 .hero-combatant strong { display: block; margin: 2px 0 5px; font: 600 17px/1 Cinzel, serif; }
@@ -292,6 +310,13 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
   .lab-title-row p { font-size: 10px; }
   .tech-stamps { max-width: none; justify-content: flex-start; }
   .tech-stamps span:nth-child(2) { display: flex; }
+  .hero-tabs { gap: 6px; margin-bottom: 10px; }
+  .hero-tab { min-height: 55px; gap: 7px; padding: 5px 7px; }
+  .hero-tab img { width: 36px; height: 42px; }
+  .hero-tab > span { display: flex; flex-direction: column; gap: 1px; }
+  .hero-tab small, .hero-tab > i { display: none; }
+  .hero-tab strong { font-size: 12px; }
+  .hero-tab em { max-width: 105px; font-size: 7px; }
   .battle-frame { border-radius: 8px; }
   .battle-hud { inset: 8px 8px auto; gap: 8px; }
   .hero-combatant { min-width: 0; gap: 5px; }

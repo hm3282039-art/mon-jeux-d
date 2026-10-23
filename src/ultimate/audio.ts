@@ -1,3 +1,5 @@
+import type { HeroId } from './rig'
+
 export type UltimateSound =
   | 'trigger'
   | 'charge'
@@ -17,8 +19,10 @@ export class ZenithAudio {
   private score: GainNode | null = null
   private sustained: OscillatorNode[] = []
   private muted = false
+  private hero: HeroId = 'kaelis'
 
-  async start() {
+  async start(hero: HeroId = 'kaelis') {
+    this.hero = hero
     this.stopScore()
     if (!this.context) {
       this.context = new AudioContext()
@@ -34,7 +38,8 @@ export class ZenithAudio {
     this.score.connect(this.master!)
 
     // A slow, original suspended chord under the action.
-    ;[55, 82.41, 110, 164.81].forEach((frequency, index) => {
+    const chord = this.hero === 'kaelis' ? [55, 82.41, 110, 164.81] : [61.74, 92.5, 123.47, 185]
+    chord.forEach((frequency, index) => {
       const oscillator = this.context!.createOscillator()
       const gain = this.context!.createGain()
       const filter = this.context!.createBiquadFilter()
@@ -87,7 +92,8 @@ export class ZenithAudio {
         this.tone(180, 0.35, 'triangle', 0.08, 520)
         break
       case 'aerial':
-        ;[220, 277.18, 329.63, 440].forEach((frequency, index) => {
+        const notes = this.hero === 'kaelis' ? [220, 277.18, 329.63, 440] : [246.94, 311.13, 369.99, 493.88]
+        notes.forEach((frequency, index) => {
           this.tone(frequency, 0.9, index === 0 ? 'triangle' : 'sine', 0.065, frequency * 1.01, index * 0.025)
         })
         break

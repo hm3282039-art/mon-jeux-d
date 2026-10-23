@@ -1,11 +1,12 @@
 import { ZenithAudio } from './audio'
 import type { UltimateSound } from './audio'
 import { clamp, smooth } from './math'
+import { HERO_PRESENTATION } from './rig'
+import type { HeroId } from './rig'
 import { mapShortTime, shotAt, ZenithRenderer } from './renderer'
 import type { UltimateMode } from './renderer'
 
 export const TARGET_MAX_HP = 86400
-export const ULTIMATE_DAMAGE = 48260
 
 export type EnginePhase = 'idle' | 'playing' | 'paused' | 'complete'
 export type GameplayEvent = {
@@ -18,6 +19,8 @@ export type GameplayEvent = {
 export type EngineSnapshot = {
   phase: EnginePhase
   mode: UltimateMode
+  hero: HeroId
+  damage: number
   time: number
   cinematicTime: number
   duration: number
@@ -46,33 +49,21 @@ const MODE_SETTINGS: Record<UltimateMode, { duration: number; impactAt: number; 
 
 const SOUND_EVENTS: Record<UltimateMode, Array<{ at: number; sound: UltimateSound }>> = {
   full: [
-    { at: 0, sound: 'trigger' },
-    { at: 0.58, sound: 'charge' },
-    { at: 1.47, sound: 'step' },
-    { at: 1.72, sound: 'step' },
-    { at: 1.96, sound: 'leap' },
-    { at: 2.35, sound: 'aerial' },
-    { at: 3.45, sound: 'dive' },
-    { at: 4.5, sound: 'impact' },
-    { at: 5.12, sound: 'land' },
-    { at: 5.72, sound: 'recover' },
-    { at: 6.78, sound: 'return' },
+    { at: 0, sound: 'trigger' }, { at: 0.58, sound: 'charge' },
+    { at: 1.47, sound: 'step' }, { at: 1.72, sound: 'step' },
+    { at: 1.96, sound: 'leap' }, { at: 2.35, sound: 'aerial' },
+    { at: 3.45, sound: 'dive' }, { at: 4.5, sound: 'impact' },
+    { at: 5.12, sound: 'land' }, { at: 5.72, sound: 'recover' }, { at: 6.78, sound: 'return' },
   ],
   short: [
-    { at: 0, sound: 'trigger' },
-    { at: 0.18, sound: 'charge' },
-    { at: 0.64, sound: 'leap' },
-    { at: 0.87, sound: 'aerial' },
-    { at: 1.07, sound: 'dive' },
-    { at: 1.35, sound: 'impact' },
-    { at: 1.63, sound: 'land' },
-    { at: 1.96, sound: 'return' },
+    { at: 0, sound: 'trigger' }, { at: 0.18, sound: 'charge' },
+    { at: 0.64, sound: 'leap' }, { at: 0.87, sound: 'aerial' },
+    { at: 1.07, sound: 'dive' }, { at: 1.35, sound: 'impact' },
+    { at: 1.63, sound: 'land' }, { at: 1.96, sound: 'return' },
   ],
   instant: [
-    { at: 0, sound: 'trigger' },
-    { at: 0.1, sound: 'dive' },
-    { at: 0.32, sound: 'impact' },
-    { at: 0.56, sound: 'land' },
+    { at: 0, sound: 'trigger' }, { at: 0.1, sound: 'dive' },
+    { at: 0.32, sound: 'impact' }, { at: 0.56, sound: 'land' },
   ],
 }
 
@@ -86,6 +77,7 @@ export class ZenithEngine {
   private battleTime = 0
   private phase: EnginePhase = 'idle'
   private mode: UltimateMode = 'full'
+  private hero: HeroId = 'kaelis'
   private time = 0
   private impactApplied = false
   private impactRealTime = 0
@@ -109,12 +101,13 @@ export class ZenithEngine {
   ) {
     this.renderer = new ZenithRenderer(canvas)
     this.animationFrame = requestAnimationFrame(this.frame)
-    this.notify(true)
+    this.notify()
   }
 
-  play(mode = this.mode) {
+  play(mode = this.mode, hero = this.hero) {
     if (this.phase === 'playing') return
     this.mode = mode
+    this.hero = hero
     this.phase = 'playing'
     this.time = 0
     this.impactApplied = false
@@ -126,11 +119,11 @@ export class ZenithEngine {
     this.status = 'Aucun effet'
     this.firedSounds = new Set(['0:trigger'])
     this.lastFrame = performance.now()
-    this.emit('cast', `${MODE_SETTINGS[mode].label} · Serment du Zénith`)
-    void this.audio.start().then(() => this.audio.event('trigger')).catch(() => {
-      // Visuals and gameplay remain fully functional when WebAudio is unavailable.
+    this.emit('cast', `${MODE_SETTINGS[mode].label} · ${HERO_PRESENTATION[this.hero].ultimate}`)
+    void this.audio.start(this.hero).then(() => this.audio.event('trigger')).catch(() => {
+      // Visuals and gameplay remain functional when WebAudio is unavailable.
     })
-    this.notify(true)
+    this.notify()
   }
 
   pause() {
@@ -142,7 +135,7 @@ export class ZenithEngine {
       this.lastFrame = performance.now()
       void this.audio.setPaused(false)
     }
-    this.notify(true)
+    this.notify()
   }
 
   skip() {
@@ -153,40 +146,38 @@ export class ZenithEngine {
   }
 
   reset() {
-    this.phase = 'idle'
-    this.time = 0
-    this.impactApplied = false
-    this.damageEvents = 0
-    this.targetHp = TARGET_MAX_HP
-    this.displayedHp = TARGET_MAX_HP
-    this.energy = 100
-    this.status = 'Aucun effet'
-    this.firedSounds.clear()
-    this.audio.finish()
-    void this.audio.setPaused(false)
+    this.resetCombatState()
     this.emit('reset', 'Cible et jauge d’ultime réinitialisées')
-    this.notify(true)
+    this.notify()
   }
 
   setMode(mode: UltimateMode) {
     if (this.phase === 'playing' || this.phase === 'paused') return
     this.mode = mode
     this.time = 0
-    this.notify(true)
+    this.notify()
+  }
+
+  setHero(hero: HeroId) {
+    if (this.phase === 'playing' || this.phase === 'paused' || hero === this.hero) return
+    this.hero = hero
+    this.resetCombatState()
+    this.emit('reset', `${HERO_PRESENTATION[hero].name} est prêt · ${HERO_PRESENTATION[hero].ultimate}`)
+    this.notify()
   }
 
   setMuted(muted: boolean) {
     this.muted = muted
     this.audio.setMuted(muted)
-    this.notify(true)
+    this.notify()
   }
 
   setRate(rate: number) {
     this.rate = rate === 0.5 ? 0.5 : 1
-    this.notify(true)
+    this.notify()
   }
 
-  /** Deterministic inspection hook used by the browser tests and timeline scrubber. */
+  /** Deterministic inspection hook used by browser tests. */
   seek(time: number) {
     if (this.phase === 'playing') return
     this.mode = 'full'
@@ -195,30 +186,24 @@ export class ZenithEngine {
     this.energy = 0
     this.impactApplied = this.time >= MODE_SETTINGS.full.impactAt
     this.damageEvents = this.impactApplied ? 1 : 0
-    this.targetHp = this.impactApplied ? TARGET_MAX_HP - ULTIMATE_DAMAGE : TARGET_MAX_HP
+    const damage = HERO_PRESENTATION[this.hero].damage
+    this.targetHp = this.impactApplied ? TARGET_MAX_HP - damage : TARGET_MAX_HP
     this.displayedHp = this.impactApplied
-      ? Math.round(this.targetHp + (TARGET_MAX_HP - this.targetHp) * (1 - smooth(clamp((this.time - 4.5) / 0.35))))
+      ? Math.round(this.targetHp + damage * (1 - smooth(clamp((this.time - 4.5) / 0.35))))
       : TARGET_MAX_HP
-    this.status = this.impactApplied ? 'Brèche du Nexus · 2 tours' : 'Aucun effet'
-    this.notify(true)
-  }
-
-  resumeFromSeek() {
-    if (this.phase !== 'paused') return
-    this.phase = 'playing'
-    this.lastFrame = performance.now()
-    this.firedSounds = new Set(SOUND_EVENTS.full.filter(event => event.at < this.time).map(event => `${event.at}:${event.sound}`))
-    void this.audio.start()
-    this.notify(true)
+    this.status = this.impactApplied ? HERO_PRESENTATION[this.hero].status : 'Aucun effet'
+    this.notify()
   }
 
   getSnapshot(): EngineSnapshot {
     const settings = MODE_SETTINGS[this.mode]
     const cinematicTime = this.getCinematicTime()
-    const shot = shotAt(cinematicTime)
+    const shot = shotAt(cinematicTime, this.hero)
     return {
       phase: this.phase,
       mode: this.mode,
+      hero: this.hero,
+      damage: HERO_PRESENTATION[this.hero].damage,
       time: this.time,
       cinematicTime,
       duration: settings.duration,
@@ -235,7 +220,7 @@ export class ZenithEngine {
       rate: this.rate,
       muted: this.muted,
       shotIndex: shot.index,
-      shotName: this.phase === 'idle' ? 'Arène du Zénith' : shot.name,
+      shotName: this.phase === 'idle' ? 'Arène des échos' : shot.name,
       shotDetail: this.phase === 'idle' ? 'Jauge pleine · ultime prêt' : shot.detail,
     }
   }
@@ -243,6 +228,20 @@ export class ZenithEngine {
   destroy() {
     cancelAnimationFrame(this.animationFrame)
     this.audio.destroy()
+  }
+
+  private resetCombatState() {
+    this.phase = 'idle'
+    this.time = 0
+    this.impactApplied = false
+    this.damageEvents = 0
+    this.targetHp = TARGET_MAX_HP
+    this.displayedHp = TARGET_MAX_HP
+    this.energy = 100
+    this.status = 'Aucun effet'
+    this.firedSounds.clear()
+    this.audio.finish()
+    void this.audio.setPaused(false)
   }
 
   private frame = (now: number) => {
@@ -265,7 +264,7 @@ export class ZenithEngine {
       if (!this.impactApplied && this.time >= MODE_SETTINGS[this.mode].impactAt) this.applyImpact()
       if (this.impactApplied) {
         const drain = smooth(clamp((this.time - this.impactRealTime) / 0.35))
-        this.displayedHp = Math.round(TARGET_MAX_HP - ULTIMATE_DAMAGE * drain)
+        this.displayedHp = Math.round(TARGET_MAX_HP - HERO_PRESENTATION[this.hero].damage * drain)
       }
       if (this.time >= MODE_SETTINGS[this.mode].duration) this.finish()
     } else if (this.phase === 'idle' || this.phase === 'complete') {
@@ -277,6 +276,7 @@ export class ZenithEngine {
       realTime: this.time,
       ambient: this.ambient,
       mode: this.mode,
+      hero: this.hero,
       active: this.phase === 'playing' || this.phase === 'paused',
       impactApplied: this.impactApplied,
     })
@@ -286,6 +286,7 @@ export class ZenithEngine {
 
   private updateSounds() {
     SOUND_EVENTS[this.mode].forEach(event => {
+      if (this.hero === 'nyxara' && event.sound === 'step') return
       const key = `${event.at}:${event.sound}`
       if (this.time >= event.at && !this.firedSounds.has(key)) {
         this.firedSounds.add(key)
@@ -303,11 +304,12 @@ export class ZenithEngine {
     this.impactApplied = true
     this.impactRealTime = this.time
     this.damageEvents += 1
-    this.targetHp = Math.max(0, TARGET_MAX_HP - ULTIMATE_DAMAGE)
-    this.status = 'Brèche du Nexus · 2 tours'
+    const presentation = HERO_PRESENTATION[this.hero]
+    this.targetHp = Math.max(0, TARGET_MAX_HP - presentation.damage)
+    this.status = presentation.status
     this.audio.event('impact')
     this.firedSounds.add(`${MODE_SETTINGS[this.mode].impactAt}:impact`)
-    this.emit('impact', `ULT_IMPACT · ${ULTIMATE_DAMAGE.toLocaleString('fr-FR')} dégâts · Brèche du Nexus`)
+    this.emit('impact', `ULT_IMPACT · ${presentation.damage.toLocaleString('fr-FR')} dégâts · ${presentation.status}`)
   }
 
   private finish() {
@@ -319,7 +321,7 @@ export class ZenithEngine {
     this.audio.finish()
     void this.audio.setPaused(false)
     this.emit('complete', 'Contrôles restitués · timers de combat repris')
-    this.notify(true)
+    this.notify()
   }
 
   private getCinematicTime() {
@@ -333,8 +335,7 @@ export class ZenithEngine {
     this.onGameplayEvent({ id: ++this.eventId, type, text, time: this.time })
   }
 
-  private notify(force = false) {
-    if (!force && this.lastSnapshot > performance.now()) return
+  private notify() {
     this.lastSnapshot = performance.now()
     this.onSnapshot(this.getSnapshot())
   }

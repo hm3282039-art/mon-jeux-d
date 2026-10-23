@@ -60,12 +60,13 @@ Une page isolée `heroes.html` permet de tester deux héros originaux avant tout
 
 Cette page attend le test et les retours de l’utilisateur. Les héros ne sont pas encore intégrés au hub ou au combat principal.
 
-## Page test 03 — nouvelle proposition d’ulti cinéma pour Aelion
+## Page test 03 — ultimes cinéma de Kaelis et Nyxara
 
-Une nouvelle page isolée `ultimate.html` propose **Aelion — Serment du Zénith**, sans reprendre la direction du laboratoire précédent comme si elle avait été validée.
+Une page isolée `ultimate.html` propose **Kaelis — Aube Incarnée** et **Nyxara — Requiem des Constellations**. Après le test d’un autre personnage, l’utilisateur a explicitement choisi de revenir à ces deux héros et à leurs designs précédents. Leur ancienne technique d’interpolation vidéo n’est toutefois pas reprise comme une validation : les nouvelles séquences utilisent de vrais rigs articulés temps réel.
 
-- une séquence complète de huit secondes en sept plans, précédée d’un storyboard chronologique ;
-- un véritable rig vectoriel temps réel pour le corps, le visage, les cheveux, le manteau et la lance, plutôt qu’un diaporama ou une déformation d’illustration ;
+- deux séquences complètes de huit secondes en sept plans, avec sélecteur de héros ;
+- les illustrations anime d’origine découpées en parties avec transparence, puis animées par une hiérarchie d’os : articulations, tête, yeux, cheveux, capes, robes et armes ;
+- une chorégraphie solaire avec épée et phénix pour Kaelis, et une incantation avec lévitation et serpent astral pour Nyxara ;
 - un golem réactif, des caméras variées, une transformation du champ de bataille, des effets et une piste sonore procédurale originale ;
 - un impact unique à 4,50 secondes, des PV et un statut synchronisés, puis une récupération et un retour au combat ;
 - une version courte de 2,4 secondes et une version directe de 0,7 seconde pour les usages répétés ;

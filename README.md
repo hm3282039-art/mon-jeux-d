@@ -21,7 +21,7 @@ npm run build
 npm run build:static
 ```
 
-Les assets du build statique utilisent des chemins relatifs pour permettre son hébergement sur un serveur statique. Le build contient trois pages indépendantes : `index.html` pour le hub, `heroes.html` pour le premier laboratoire des héros et `ultimate.html` pour le nouveau test d’ultime temps réel d’Aelion.
+Les assets du build statique utilisent des chemins relatifs pour permettre son hébergement sur un serveur statique. Le build contient trois pages indépendantes : `index.html` pour le hub, `heroes.html` pour le premier laboratoire des héros et `ultimate.html` pour le nouveau test d’ultimes temps réel de Kaelis et Nyxara.
 
 ## Page test 02 — Héros et cinématiques
 
@@ -37,17 +37,19 @@ Ouvrir `heroes.html` en développement, ou `docs/heroes.html` dans le build stat
 
 Cette page est un banc d’essai isolé : les héros ne sont pas encore intégrés au hub ou à un système de combat complet.
 
-## Page test 03 — Aelion, Serment du Zénith
+## Page test 03 — Kaelis et Nyxara, ultimes cinéma
 
 Ouvrir `ultimate.html` en développement, ou `docs/ultimate.html` dans le build statique.
 
-- cinématique complète de **8 secondes** découpée en sept plans, avec impact à **4,50 s** ;
-- personnage vectoriel articulé calculé à chaque frame : corps, visage, yeux, cheveux, manteau et lance ;
+- deux héros sélectionnables avec leurs designs d’origine : **Kaelis — Aube Incarnée** et **Nyxara — Requiem des Constellations** ;
+- cinématiques complètes de **8 secondes** découpées en sept plans, avec impact à **4,50 s** ;
+- rigs par parties utilisant les illustrations anime d’origine : os hiérarchiques, bras, jambes, tête, yeux, cheveux, capes, robes et armes ;
+- ailes de phénix et trainées solaires pour Kaelis ; serpent astral animé et constellations pour Nyxara ;
 - golem articulé avec anticipation, recul, fissures et réaction à l’impact ;
-- caméras, transformation du champ de bataille, particules, trainées, débris et son WebAudio original ;
+- caméras, transformation du champ de bataille, particules, débris et son WebAudio original ;
 - version courte de **2,4 s** avec impact à **1,35 s**, et version directe de **0,7 s** sans cinématique ;
 - pause, reprise, skip, rejeu, mute, ralenti et réinitialisation de la cible ;
-- événement `ULT_IMPACT` unique, drain des PV synchronisé, statut et reprise des timers de combat ;
+- événement `ULT_IMPACT` unique, drain des PV synchronisé, statut propre au héros et reprise des timers de combat ;
 - mesure réelle de la fréquence d’affichage et boucle `requestAnimationFrame` non plafonnée à 60 Hz.
 
 Cette nouvelle proposition est un prototype isolé qui attend le test et la validation de l’utilisateur. Elle n’est pas intégrée au hub ni au combat principal.
@@ -85,9 +87,9 @@ Toutes les données sont locales au prototype. Aucun backend, compte, paiement o
 - `src/styles.css` : direction artistique, effets et responsive ;
 - `heroes.html`, `src/heroes-main.tsx`, `src/HeroLab.tsx`, `src/heroes.css` : page test des héros, compétences et lecteur cinématique ;
 - `public/assets/heroes/` : portraits WebP, posters et vidéos MP4 des deux ultimes ;
-- `ultimate.html`, `src/ultimate-main.tsx`, `src/UltimateLab.tsx`, `src/ultimate.css` : page de test autonome de l’ultime d’Aelion ;
-- `src/ultimate/` : rig et rendu Canvas, moteur temporel, événements gameplay et son procédural ;
-- `public/assets/ultimate/` : décor original de l’arène du Zénith ;
+- `ultimate.html`, `src/ultimate-main.tsx`, `src/UltimateLab.tsx`, `src/ultimate.css` : page de test autonome des ultimes de Kaelis et Nyxara ;
+- `src/ultimate/` : rigs et atlas, rendu Canvas, moteur temporel, événements gameplay et son procédural ;
+- `public/assets/ultimate/` : décor de l’arène et atlas à transparence réelle des deux héros ;
 - `public/assets/astrea-celestia.webp` : décor panoramique original de la capitale céleste ;
 - `public/assets/avatar-aelion.webp` : avatar du joueur ;
 - `docs/` : dernier build statique publiable ;
