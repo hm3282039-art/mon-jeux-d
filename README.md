@@ -21,7 +21,7 @@ npm run build
 npm run build:static
 ```
 
-Les assets du build statique utilisent des chemins relatifs pour permettre son hébergement sur un serveur statique. Le build contient deux pages indépendantes : `index.html` pour le hub et `heroes.html` pour le laboratoire des héros.
+Les assets du build statique utilisent des chemins relatifs pour permettre son hébergement sur un serveur statique. Le build contient trois pages indépendantes : `index.html` pour le hub, `heroes.html` pour le premier laboratoire des héros et `ultimate.html` pour le nouveau test d’ultime temps réel d’Aelion.
 
 ## Page test 02 — Héros et cinématiques
 
@@ -36,6 +36,21 @@ Ouvrir `heroes.html` en développement, ou `docs/heroes.html` dans le build stat
 - affichage mobile avec fond cinématographique et gestion explicite des erreurs vidéo.
 
 Cette page est un banc d’essai isolé : les héros ne sont pas encore intégrés au hub ou à un système de combat complet.
+
+## Page test 03 — Aelion, Serment du Zénith
+
+Ouvrir `ultimate.html` en développement, ou `docs/ultimate.html` dans le build statique.
+
+- cinématique complète de **8 secondes** découpée en sept plans, avec impact à **4,50 s** ;
+- personnage vectoriel articulé calculé à chaque frame : corps, visage, yeux, cheveux, manteau et lance ;
+- golem articulé avec anticipation, recul, fissures et réaction à l’impact ;
+- caméras, transformation du champ de bataille, particules, trainées, débris et son WebAudio original ;
+- version courte de **2,4 s** avec impact à **1,35 s**, et version directe de **0,7 s** sans cinématique ;
+- pause, reprise, skip, rejeu, mute, ralenti et réinitialisation de la cible ;
+- événement `ULT_IMPACT` unique, drain des PV synchronisé, statut et reprise des timers de combat ;
+- mesure réelle de la fréquence d’affichage et boucle `requestAnimationFrame` non plafonnée à 60 Hz.
+
+Cette nouvelle proposition est un prototype isolé qui attend le test et la validation de l’utilisateur. Elle n’est pas intégrée au hub ni au combat principal.
 
 ## Interface et interactions du hub
 
@@ -70,6 +85,9 @@ Toutes les données sont locales au prototype. Aucun backend, compte, paiement o
 - `src/styles.css` : direction artistique, effets et responsive ;
 - `heroes.html`, `src/heroes-main.tsx`, `src/HeroLab.tsx`, `src/heroes.css` : page test des héros, compétences et lecteur cinématique ;
 - `public/assets/heroes/` : portraits WebP, posters et vidéos MP4 des deux ultimes ;
+- `ultimate.html`, `src/ultimate-main.tsx`, `src/UltimateLab.tsx`, `src/ultimate.css` : page de test autonome de l’ultime d’Aelion ;
+- `src/ultimate/` : rig et rendu Canvas, moteur temporel, événements gameplay et son procédural ;
+- `public/assets/ultimate/` : décor original de l’arène du Zénith ;
 - `public/assets/astrea-celestia.webp` : décor panoramique original de la capitale céleste ;
 - `public/assets/avatar-aelion.webp` : avatar du joueur ;
 - `docs/` : dernier build statique publiable ;

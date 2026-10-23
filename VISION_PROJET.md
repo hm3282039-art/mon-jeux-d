@@ -60,6 +60,19 @@ Une page isolée `heroes.html` permet de tester deux héros originaux avant tout
 
 Cette page attend le test et les retours de l’utilisateur. Les héros ne sont pas encore intégrés au hub ou au combat principal.
 
+## Page test 03 — nouvelle proposition d’ulti cinéma pour Aelion
+
+Une nouvelle page isolée `ultimate.html` propose **Aelion — Serment du Zénith**, sans reprendre la direction du laboratoire précédent comme si elle avait été validée.
+
+- une séquence complète de huit secondes en sept plans, précédée d’un storyboard chronologique ;
+- un véritable rig vectoriel temps réel pour le corps, le visage, les cheveux, le manteau et la lance, plutôt qu’un diaporama ou une déformation d’illustration ;
+- un golem réactif, des caméras variées, une transformation du champ de bataille, des effets et une piste sonore procédurale originale ;
+- un impact unique à 4,50 secondes, des PV et un statut synchronisés, puis une récupération et un retour au combat ;
+- une version courte de 2,4 secondes et une version directe de 0,7 seconde pour les usages répétés ;
+- lecture, pause, skip, rejeu, son, ralenti et journal de synchronisation dans le navigateur.
+
+Cette proposition doit maintenant être testée par l’utilisateur. Elle ne sera intégrée au jeu principal qu’après ses retours et sa validation.
+
 ## Direction artistique confirmée
 
 - Les personnages auront une **direction artistique anime**, avec des identités et des chara-designs originaux.

@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc -b && BUILD_PAGE=index vite build && BUILD_PAGE=heroes vite build",
-    "build:static": "tsc -b && BUILD_PAGE=index vite build --outDir docs && BUILD_PAGE=heroes vite build --outDir docs",
+    "build": "tsc -b && BUILD_PAGE=index vite build && BUILD_PAGE=heroes vite build && BUILD_PAGE=ultimate vite build",
+    "build:static": "tsc -b && BUILD_PAGE=index vite build --outDir docs && BUILD_PAGE=heroes vite build --outDir docs && BUILD_PAGE=ultimate vite build --outDir docs",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

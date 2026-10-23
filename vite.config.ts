@@ -8,13 +8,15 @@ export default defineConfig({
   plugins: [react()],
   build: {
     // Static hosting is more reliable when each page has an autonomous bundle.
-    emptyOutDir: buildPage !== 'heroes',
+    emptyOutDir: buildPage === 'index' || !buildPage,
     rollupOptions: {
       input: buildPage === 'index'
         ? ['index.html']
         : buildPage === 'heroes'
           ? ['heroes.html']
-          : ['index.html', 'heroes.html'],
+          : buildPage === 'ultimate'
+            ? ['ultimate.html']
+            : ['index.html', 'heroes.html', 'ultimate.html'],
     },
   },
   server: {
