@@ -198,7 +198,7 @@ export default function App() {
   const [questClaimed, setQuestClaimed] = useState(false)
   const [mailClaimed, setMailClaimed] = useState(false)
   const [mailRead, setMailRead] = useState(false)
-  const [quickOpen, setQuickOpen] = useState(() => window.innerWidth > 700)
+  const [quickOpen, setQuickOpen] = useState(false)
   const [shopFocus, setShopFocus] = useState('Or')
 
   const idleGold = Math.floor(idleSeconds / 60) * 76
@@ -606,22 +606,29 @@ export default function App() {
       </aside>
 
       <button type="button" className="quest-tracker" onClick={() => setSelection('quests')}>
-        <span className="quest-tracker-top"><small>SERMENTS DU JOUR</small><strong>2 / 3</strong></span>
-        <span className="quest-tracker-title"><Gift size={15} /><strong>Une récolte vous attend</strong><ChevronRight size={14} /></span>
+        <span className="quest-tracker-top"><small>QUÊTES</small><strong>2 / 3</strong></span>
+        <span className="quest-tracker-title"><Gift size={15} /><strong>Récolte disponible</strong><ChevronRight size={14} /></span>
         <span className="quest-tracker-progress"><i /></span>
       </button>
 
       <aside className={`quick-rail ${quickOpen ? 'open' : 'closed'}`}>
-        <button type="button" className="rail-toggle" onClick={() => setQuickOpen((value) => !value)} aria-label={quickOpen ? 'Rétracter les accès rapides' : 'Afficher les accès rapides'}>
-          {quickOpen ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
-          {!quickOpen ? <Sparkles size={14} /> : null}
+        <button
+          type="button"
+          className="rail-toggle"
+          onClick={() => setQuickOpen((value) => !value)}
+          aria-label={quickOpen ? 'Rétracter les accès rapides' : 'Afficher les accès rapides'}
+          aria-expanded={quickOpen}
+          aria-controls="quick-rail-items"
+        >
+          {quickOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          <span className="rail-toggle-label">{quickOpen ? 'Fermer' : 'Menu'}</span>
         </button>
         {quickOpen ? (
-          <div className="quick-rail-items">
+          <div className="quick-rail-items" id="quick-rail-items">
             {quickItems.map((item) => {
               const Icon = item.icon
               return (
-                <button type="button" key={item.id} className={selection === item.id ? 'active' : ''} onClick={() => setSelection(item.id)}>
+                <button type="button" key={item.id} className={selection === item.id ? 'active' : ''} onClick={() => { setSelection(item.id); setQuickOpen(false) }}>
                   <span className="quick-icon"><Icon size={20} />{item.badge ? <i>{item.badge}</i> : null}</span>
                   <span>{item.label}</span>
                 </button>
