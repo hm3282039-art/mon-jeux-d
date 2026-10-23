@@ -38,6 +38,7 @@ import {
 } from 'lucide-react'
 import { Atmosphere } from './Atmosphere'
 import type { RenderQuality } from './Atmosphere'
+import cityArtFallbackUrl from './assets/astrea-celestia.webp?inline'
 
 const numberFormat = new Intl.NumberFormat('fr-FR')
 
@@ -479,7 +480,19 @@ export default function App() {
       <div className="city-scroll" ref={mapRef}>
         <div className="city-map">
           <div className="city-world">
-            <img className="city-art" src="assets/astrea-celestia.webp" alt="La capitale céleste d’Astréa et ses districts" draggable="false" fetchPriority="high" />
+            <img
+              className="city-art"
+              src="assets/astrea-celestia.webp"
+              alt="La capitale céleste d’Astréa et ses districts"
+              draggable="false"
+              fetchPriority="high"
+              onError={(event) => {
+                const image = event.currentTarget
+                if (image.dataset.fallbackApplied) return
+                image.dataset.fallbackApplied = 'true'
+                image.src = cityArtFallbackUrl
+              }}
+            />
             <div className="world-color-grade" aria-hidden="true" />
 
             <div className="portal-effect" aria-hidden="true">
