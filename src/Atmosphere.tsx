@@ -58,7 +58,9 @@ export const Atmosphere = memo(function Atmosphere({ enabled, quality }: Atmosph
     const status = statusRef.current
     if (!canvas || !status) return
 
-    const context = canvas.getContext('2d', { alpha: true, desynchronized: true })
+    // Keep a regular transparent canvas. Desynchronized contexts can be
+    // composited as opaque black by some Opera/GPU combinations, hiding the city.
+    const context = canvas.getContext('2d', { alpha: true })
     if (!context) return
 
     let animationFrame = 0
