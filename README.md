@@ -21,9 +21,23 @@ npm run build
 npm run build:static
 ```
 
-Les assets du build statique utilisent des chemins relatifs pour permettre son hébergement sur un serveur statique.
+Les assets du build statique utilisent des chemins relatifs pour permettre son hébergement sur un serveur statique. Le build contient deux pages indépendantes : `index.html` pour le hub et `heroes.html` pour le laboratoire des héros.
 
-## Interface et interactions
+## Page test 02 — Héros et cinématiques
+
+Ouvrir `heroes.html` en développement, ou `docs/heroes.html` dans le build statique.
+
+- deux héros originaux : **Kaelis**, épéiste solaire, et **Nyxara**, oracle céleste ;
+- trois compétences actives par héros avec dégâts, effets, cooldowns, charge d’ultime et sons WebAudio ;
+- golem d’entraînement avec PV, statuts, critiques et réinitialisation ;
+- statistiques, passifs, sélection des personnages et journal de combat ;
+- une cinématique de **8 secondes, 60 FPS et audio stéréo** par héros, produite à partir de quatre plans d’action distincts avec interpolation du mouvement ;
+- lecture plein écran, sous-titres, mute, progression, skip avec Échap, replay et écran de résultat ;
+- affichage mobile avec fond cinématographique et gestion explicite des erreurs vidéo.
+
+Cette page est un banc d’essai isolé : les héros ne sont pas encore intégrés au hub ou à un système de combat complet.
+
+## Interface et interactions du hub
 
 - décor heroic-fantasy saturé avec dorures, cristaux, néons cyan/violet, brume, rayons et parallaxe ;
 - portail d’invocation central avec anneaux et éclats animés ;
@@ -54,6 +68,8 @@ Toutes les données sont locales au prototype. Aucun backend, compte, paiement o
 - `src/App.tsx` : carte, HUD, points d’intérêt et interactions ;
 - `src/Atmosphere.tsx` : moteur canvas haute fréquence, qualité et mesure des FPS ;
 - `src/styles.css` : direction artistique, effets et responsive ;
+- `heroes.html`, `src/heroes-main.tsx`, `src/HeroLab.tsx`, `src/heroes.css` : page test des héros, compétences et lecteur cinématique ;
+- `public/assets/heroes/` : portraits WebP, posters et vidéos MP4 des deux ultimes ;
 - `public/assets/astrea-celestia.webp` : décor panoramique original de la capitale céleste ;
 - `public/assets/avatar-aelion.webp` : avatar du joueur ;
 - `docs/` : dernier build statique publiable ;

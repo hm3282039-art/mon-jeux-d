@@ -22,7 +22,7 @@ Il n’a pas à installer ou apprendre un logiciel d’animation, dessiner les a
 
 La participation attendue de l’utilisateur se limite à orienter le projet, tester les pages fournies et faire des retours.
 
-## Phase en cours : prototype du hub
+## Prototype du hub
 
 La première étape de développement validée est la création d’un **hub web interactif**, traité comme une page de test avant toute intégration au futur jeu complet.
 
@@ -44,6 +44,21 @@ Le prototype comprend désormais :
 - des effets optimisés sans re-render React par frame ni flou animé plein écran, et une mise en pause hors de l’onglet actif.
 
 Les intérieurs des bâtiments, les combats, les véritables tirages d’invocation et les systèmes sociaux ne sont pas intégrés à ce prototype. Ils devront faire l’objet de leurs propres pages de test.
+
+## Phase en cours : page test 02 — Héros et ultimes
+
+Une page isolée `heroes.html` permet de tester deux héros originaux avant toute intégration au jeu :
+
+- **Kaelis, la Lame de l’Aube**, guerrier solaire avec épée et phénix ;
+- **Nyxara, l’Oracle du Néant**, mage céleste avec serpent astral et constellations ;
+- trois compétences actives et un passif par personnage, avec dégâts, cooldowns, statuts, critiques et charge d’ultime ;
+- un golem d’entraînement avec PV et réinitialisation ;
+- deux cinématiques de huit secondes composées chacune de quatre plans distincts : préparation, action, impact et retombée ;
+- une animation vidéo 60 FPS avec interpolation du mouvement, montage, caméra et effets, plutôt qu’un simple zoom sur une illustration ;
+- une piste audio stéréo originale synthétisée pour chaque ultime, accompagnée d’effets WebAudio pour les compétences ;
+- lecture, mute, skip, replay, résultat et adaptation mobile.
+
+Cette page attend le test et les retours de l’utilisateur. Les héros ne sont pas encore intégrés au hub ou au combat principal.
 
 ## Direction artistique confirmée
 
