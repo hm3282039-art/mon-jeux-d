@@ -29,12 +29,16 @@ La première étape de développement validée est la création d’un **hub web
 Le prototype comprend désormais :
 
 - le nom de travail modifiable **Astréa — Les Échos du Ciel** ;
-- une **carte de ville plein écran**, dans l’esprit du hub de MLA, sans grand personnage au centre ;
-- huit lieux directement intégrés au décor et cliquables : taverne, marché, sanctuaire, temple des vœux, arbre-monde, guilde, tour et arène ;
-- uniquement les informations utiles sur les bords : profil, ressources, accès rapides, coffre AFK et navigation ;
+- une **carte de ville plein écran** aux codes des hubs de RPG mobiles comme MLA, sans grand héros au centre ;
+- neuf points d’intérêt intégrés au décor : taverne, marché, forge, sanctuaire, temple des vœux, arbre-monde, guilde, tour et arène ;
+- un portail arcanique central renforcé avec anneaux animés, cristaux et lueurs cyan/violet ;
+- un arbre-monde avec jauge d’accumulation, coffre étincelant et récolte AFK interactive ;
+- un avatar de joueur avec cadre VIP doré, niveau, puissance et barre de progression ;
+- quatre monnaies dans le HUD : or, diamants, énergie et parchemins, chacune avec un bouton d’accès aux offres ;
+- un dock métallique à cinq entrées : Campagne, Cité, Héros, Sac et Guilde ;
+- un accès rapide rétractable pour les événements, le pass de combat, les quotidiennes, la taverne AFK et le magasin ;
 - de petits bandeaux d’information plutôt que de grandes fenêtres masquant la carte ;
-- une carte que l’on peut faire glisser horizontalement pour explorer la ville sur mobile ;
-- **aucun personnage créé ou affiché dans cette étape du hub**.
+- une carte navigable horizontalement sur mobile, avec parallaxe, brume magique, rayons solaires et particules.
 
 Les intérieurs des bâtiments, les combats, les véritables tirages d’invocation et les systèmes sociaux ne sont pas intégrés à ce prototype. Ils devront faire l’objet de leurs propres pages de test.
 
@@ -42,6 +46,8 @@ Les intérieurs des bâtiments, les combats, les véritables tirages d’invocat
 
 - Les personnages auront une **direction artistique anime**, avec des identités et des chara-designs originaux.
 - Le hub explore une ambiance de fantasy céleste mêlant architecture lumineuse, îles flottantes, magie et interface or/bleu nuit.
+- La version actuelle renforce les codes **heroic-fantasy anime modernes** : couleurs saturées, dorures métalliques, néons cyan et violets, cristaux, bannières de combat et bâtiments imposants.
+- L’avatar est le seul portrait de personnage affiché dans le hub ; aucun héros en pied ne masque la carte.
 - Les noms, l’univers et les visuels du prototype pourront être ajustés avec les retours de l’utilisateur.
 
 ## Ambition graphique

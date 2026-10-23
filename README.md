@@ -1,10 +1,6 @@
-# Astréa — Prototype de hub ville
+# Astréa — Hub de cité heroic-fantasy
 
-Page de test web pour un idle RPG anime. Le nom **Astréa — Les Échos du Ciel** est un titre de travail.
-
-## Direction du prototype
-
-Le hub est une **carte de ville plein écran**, sans grand personnage au centre. Les bâtiments sont les points d’interaction principaux, dans l’esprit d’un hub de RPG mobile comme MLA, avec des visuels originaux.
+Prototype web d’un hub d’idle RPG anime, reprenant les codes UI/UX des jeux mobiles comme MLA avec des visuels originaux.
 
 ## Lancer le prototype
 
@@ -15,28 +11,38 @@ npm run dev
 
 Le serveur Vite écoute sur `0.0.0.0:5173`.
 
-## Vérifier la production
+## Construire
 
 ```bash
+# Build de contrôle dans dist/
 npm run build
-npm run preview
+
+# Version statique autonome dans docs/
+npm run build:static
 ```
 
-## Éléments testables
+Les assets du build statique utilisent des chemins relatifs pour permettre son hébergement sur un serveur statique.
 
-- huit bâtiments cliquables : taverne, marché, sanctuaire, temple des vœux, arbre-monde, guilde, tour et arène ;
-- carte navigable par glissement horizontal sur les écrans étroits ;
-- profil et ressources discrets sur les bords de l’écran ;
-- coffre AFK avec monnaies de démonstration ;
-- petits bandeaux pour les lieux, quêtes, messages, ressources et options ;
-- ambiance animée désactivable et recentrage de la carte ;
-- navigation Aventure, Ville et Banlieue, en attente de leurs futures pages.
+## Interface et interactions
 
-Toutes les données sont locales au prototype. Aucun backend, compte, paiement ou tirage réel n’est utilisé. Les intérieurs des bâtiments et les autres mécaniques seront testés séparément avant intégration.
+- décor heroic-fantasy saturé avec dorures, cristaux, néons cyan/violet, brume, rayons et parallaxe ;
+- portail d’invocation central avec anneaux et éclats animés ;
+- neuf points d’intérêt : taverne, marché, forge, sanctuaire, invocation, arbre-monde, guilde, tour et arène ;
+- avatar VIP, niveau, puissance et barre de progression ;
+- ressources Or, Diamants, Énergie et Parchemins avec boutons `+` ouvrant les offres ;
+- dock Campagne, Cité, Héros, Sac et Guilde ;
+- raccourcis rétractables : Événements, Pass de combat, Quotidiennes, Taverne AFK et Magasin ;
+- jauge AFK et coffre cliquable au pied de l’Arbre-monde ;
+- cartes et options accessibles dans de petits bandeaux sans masquer toute la ville ;
+- navigation horizontale de la carte sur les écrans étroits et mode sans animations.
+
+Toutes les données sont locales au prototype. Aucun backend, compte, paiement ou tirage réel n’est utilisé. Les intérieurs et mécaniques complètes seront prototypés séparément.
 
 ## Structure
 
-- `src/App.tsx` : carte, bâtiments et interactions ;
-- `src/styles.css` : interface, animations et responsive ;
-- `public/assets/ville-astrea.webp` : décor original optimisé pour le web ;
-- `VISION_PROJET.md` : vision et règles de production du jeu.
+- `src/App.tsx` : carte, HUD, points d’intérêt et interactions ;
+- `src/styles.css` : direction artistique, effets et responsive ;
+- `public/assets/ville-astrea-v2.webp` : décor heroic-fantasy original ;
+- `public/assets/avatar-aelion.webp` : avatar du joueur ;
+- `docs/` : dernier build statique publiable ;
+- `VISION_PROJET.md` : vision et règles de production.
