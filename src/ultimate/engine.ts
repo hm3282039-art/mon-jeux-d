@@ -52,13 +52,13 @@ const SOUND_EVENTS: Record<UltimateMode, Array<{ at: number; sound: UltimateSoun
     { at: 0, sound: 'trigger' }, { at: 0.58, sound: 'charge' },
     { at: 1.47, sound: 'step' }, { at: 1.72, sound: 'step' },
     { at: 1.96, sound: 'leap' }, { at: 2.35, sound: 'aerial' },
-    { at: 3.45, sound: 'dive' }, { at: 4.5, sound: 'impact' },
+    { at: 3.45, sound: 'dive' }, { at: 4.5, sound: 'impact' }, { at: 4.72, sound: 'roar' },
     { at: 5.12, sound: 'land' }, { at: 5.72, sound: 'recover' }, { at: 6.78, sound: 'return' },
   ],
   short: [
     { at: 0, sound: 'trigger' }, { at: 0.18, sound: 'charge' },
     { at: 0.64, sound: 'leap' }, { at: 0.87, sound: 'aerial' },
-    { at: 1.07, sound: 'dive' }, { at: 1.35, sound: 'impact' },
+    { at: 1.07, sound: 'dive' }, { at: 1.35, sound: 'impact' }, { at: 1.42, sound: 'roar' },
     { at: 1.63, sound: 'land' }, { at: 1.96, sound: 'return' },
   ],
   instant: [

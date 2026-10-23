@@ -44,9 +44,9 @@ Ouvrir `ultimate.html` en développement, ou `docs/ultimate.html` dans le build 
 - deux héros sélectionnables avec leurs designs d’origine : **Kaelis — Aube Incarnée** et **Nyxara — Requiem des Constellations** ;
 - cinématiques complètes de **8 secondes** découpées en sept plans, avec impact à **4,50 s** ;
 - rigs par parties utilisant les illustrations anime d’origine : os hiérarchiques, bras, jambes, tête, yeux, cheveux, capes, robes et armes ;
-- ailes de phénix et trainées solaires pour Kaelis ; serpent astral animé et constellations pour Nyxara ;
-- golem articulé avec anticipation, recul, fissures et réaction à l’impact ;
-- caméras, transformation du champ de bataille, particules, débris et son WebAudio original ;
+- ailes de phénix illustrées et rattachées au dos de Kaelis, rotation aérienne complète et traînées solaires ; dragon astral détaillé et articulé pour Nyxara ;
+- **Dragon du Zénith** détaillé, avec respiration, garde, battements d’ailes, recul et rugissement à l’impact ;
+- caméras recadrées pour les figures, temps d’arrêt au contact, cratère persistant, fissures, poussière, débris et son WebAudio original ;
 - version courte de **2,4 s** avec impact à **1,35 s**, et version directe de **0,7 s** sans cinématique ;
 - pause, reprise, skip, rejeu, mute, ralenti et réinitialisation de la cible ;
 - événement `ULT_IMPACT` unique, drain des PV synchronisé, statut propre au héros et reprise des timers de combat ;
@@ -89,7 +89,7 @@ Toutes les données sont locales au prototype. Aucun backend, compte, paiement o
 - `public/assets/heroes/` : portraits WebP, posters et vidéos MP4 des deux ultimes ;
 - `ultimate.html`, `src/ultimate-main.tsx`, `src/UltimateLab.tsx`, `src/ultimate.css` : page de test autonome des ultimes de Kaelis et Nyxara ;
 - `src/ultimate/` : rigs et atlas, rendu Canvas, moteur temporel, événements gameplay et son procédural ;
-- `public/assets/ultimate/` : décor de l’arène et atlas à transparence réelle des deux héros ;
+- `public/assets/ultimate/` : décor de l’arène, atlas des deux héros, dragons articulés et ailes de phénix à transparence réelle ;
 - `public/assets/astrea-celestia.webp` : décor panoramique original de la capitale céleste ;
 - `public/assets/avatar-aelion.webp` : avatar du joueur ;
 - `docs/` : dernier build statique publiable ;

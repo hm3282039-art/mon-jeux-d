@@ -66,8 +66,8 @@ Une page isolée `ultimate.html` propose **Kaelis — Aube Incarnée** et **Nyxa
 
 - deux séquences complètes de huit secondes en sept plans, avec sélecteur de héros ;
 - les illustrations anime d’origine découpées en parties avec transparence, puis animées par une hiérarchie d’os : articulations, tête, yeux, cheveux, capes, robes et armes ;
-- une chorégraphie solaire avec épée et phénix pour Kaelis, et une incantation avec lévitation et serpent astral pour Nyxara ;
-- un golem réactif, des caméras variées, une transformation du champ de bataille, des effets et une piste sonore procédurale originale ;
+- une chorégraphie solaire avec rotation aérienne complète et ailes de phénix illustrées pour Kaelis, et une incantation avec lévitation et dragon astral articulé pour Nyxara ;
+- un **Dragon du Zénith** détaillé et réactif, des caméras variées, un cratère persistant, des effets et une piste sonore procédurale originale avec rugissement ;
 - un impact unique à 4,50 secondes, des PV et un statut synchronisés, puis une récupération et un retour au combat ;
 - une version courte de 2,4 secondes et une version directe de 0,7 seconde pour les usages répétés ;
 - lecture, pause, skip, rejeu, son, ralenti et journal de synchronisation dans le navigateur.

@@ -41,22 +41,22 @@ const MODES: Array<{ id: UltimateMode; name: string; duration: string; descripti
 
 const STORYBOARDS: Record<HeroId, Array<[string, string, string, string]>> = {
   kaelis: [
-    ['0,00 – 0,55', 'I', 'La lame du serment', 'Anticipation, appui au sol et lumière retenue.'],
-    ['0,55 – 1,35', 'II', 'L’étincelle de l’aube', 'Gros plan animé, regard et épée solaire.'],
-    ['1,35 – 2,35', 'III', 'La charge solaire', 'Course, foulées, cape et envol en traveling.'],
-    ['2,35 – 3,45', 'IV', 'Les ailes du phénix', 'Rotation aérienne et caméra orbitale.'],
-    ['3,45 – 4,50', 'V', 'Aube incarnée', 'Entaille accélérée, cible visible et caméra poursuite.'],
-    ['4,50 – 5,65', 'VI', 'Impact solaire', 'Dégâts uniques, réaction du golem et réception.'],
-    ['5,65 – 8,00', 'VII', 'Après l’incandescence', 'Récupération, caméra et contrôles restitués.'],
+    ['0,00 – 0,55', 'I', 'Le dragon du Zénith', 'Plan d’ensemble : le dragon respire, Kaelis prend appui et retient sa lumière.'],
+    ['0,55 – 1,35', 'II', 'Le serment de l’aube', 'Gros plan animé ; regard, épée et premières braises au niveau des omoplates.'],
+    ['1,35 – 2,35', 'III', 'La charge solaire', 'Course aux appuis stables, cape entraînée et dragon qui suit la cible en traveling.'],
+    ['2,35 – 3,45', 'IV', 'Les ailes du phénix', 'Les ailes illustrées se déploient depuis son dos ; rotation aérienne et caméra orbitale.'],
+    ['3,45 – 4,50', 'V', 'La chute incandescente', 'Plongée accélérée, dragon en garde, trajectoire de lame et point de contact lisibles.'],
+    ['4,50 – 5,65', 'VI', 'Le ciel se fend', 'Dégâts uniques à 4,50 s ; entaille, cratère, onde de choc et rugissement du dragon.'],
+    ['5,65 – 8,00', 'VII', 'Après l’incandescence', 'Réception contrôlée, ailes repliées, récupération et retour au combat.'],
   ],
   nyxara: [
-    ['0,00 – 0,55', 'I', 'L’oracle ouvre les yeux', 'Anticipation et première constellation.'],
-    ['0,55 – 1,35', 'II', 'La carte céleste', 'Gros plan animé, regard et bâton astral.'],
-    ['1,35 – 2,35', 'III', 'L’ascension de Nyxara', 'Lévitation, incantation, cheveux et robe.'],
-    ['2,35 – 3,45', 'IV', 'Le serpent astral', 'Constellation vivante et caméra orbitale.'],
-    ['3,45 – 4,50', 'V', 'Requiem des Constellations', 'Plongée du serpent vers la cible.'],
-    ['4,50 – 5,65', 'VI', 'Effondrement astral', 'Dégâts uniques, marque et réaction du golem.'],
-    ['5,65 – 8,00', 'VII', 'Silence cosmique', 'Descente, récupération et retour au combat.'],
+    ['0,00 – 0,55', 'I', 'L’oracle et le dragon', 'Plan d’ensemble : le dragon respire tandis que Nyxara ouvre sa première constellation.'],
+    ['0,55 – 1,35', 'II', 'La carte céleste', 'Gros plan animé ; regard, bâton et astres qui répondent à son incantation.'],
+    ['1,35 – 2,35', 'III', 'L’ascension de Nyxara', 'Lévitation, cheveux et robe entraînés ; le dragon lève la tête vers le ciel.'],
+    ['2,35 – 3,45', 'IV', 'Le dragon astral', 'La créature cosmique détaillée se déploie autour de Nyxara en caméra orbitale.'],
+    ['3,45 – 4,50', 'V', 'Requiem des Constellations', 'Plongée continue du dragon astral ; la cible et la trajectoire restent visibles.'],
+    ['4,50 – 5,65', 'VI', 'Collision astrale', 'Dégâts uniques à 4,50 s ; marque, cratère, réaction et rugissement du dragon.'],
+    ['5,65 – 8,00', 'VII', 'Silence cosmique', 'Dissipation des astres, descente contrôlée et retour synchronisé au combat.'],
   ],
 }
 
@@ -170,7 +170,7 @@ export default function UltimateLab() {
       <div className="lab-layout">
         <section className="battle-column" aria-label={`Zone de test de l’ultime de ${presentation.name}`}>
           <div className={`battle-frame ${active ? 'is-active' : ''} ${snapshot.impactApplied ? 'has-impact' : ''}`}>
-            <canvas ref={canvasRef} className="battle-canvas" aria-label={`${presentation.name} affronte un golem dans l’arène céleste`} />
+            <canvas ref={canvasRef} className="battle-canvas" aria-label={`${presentation.name} affronte le Dragon du Zénith dans l’arène céleste`} />
             <div className={`battle-hud ${fullHudVisible ? 'is-visible' : ''}`}>
               <div className="combatant hero-combatant">
                 <img src={presentation.portrait} alt={`Portrait de ${presentation.name}`} />
@@ -181,7 +181,7 @@ export default function UltimateLab() {
                 </div>
               </div>
               <div className="combatant target-combatant">
-                <div className="target-heading"><span>GOLEM D’ENTRAÎNEMENT</span><b>{Math.round(hpPercent)} %</b></div>
+                <div className="target-heading"><span>DRAGON DU ZÉNITH · NIV. 80</span><b>{Math.round(hpPercent)} %</b></div>
                 <div className="target-hp-track"><i style={{ width: `${hpPercent}%` }} /></div>
                 <div className="target-numbers"><strong>{numberFormat.format(snapshot.displayedHp)}</strong><span>/ {numberFormat.format(TARGET_MAX_HP)} PV</span></div>
                 <div className={`target-status ${snapshot.impactApplied ? 'is-active' : ''}`}><Shield size={11} /> {snapshot.status}</div>
@@ -257,7 +257,7 @@ export default function UltimateLab() {
               <div className="nexus-icon">{snapshot.hero === 'kaelis' ? <Sparkles size={24} /> : <CircleGauge size={24} />}</div>
               <div><span>ULTIME · {snapshot.hero === 'kaelis' ? 'LUMIÈRE' : 'COSMOS'}</span><h2>{presentation.ultimate}</h2></div>
             </div>
-            <p>{snapshot.hero === 'kaelis' ? 'Kaelis fait jaillir les ailes du phénix et abat sa lame solaire sur la cible.' : 'Nyxara déploie une constellation vivante et précipite son serpent astral sur la cible.'}</p>
+            <p>{snapshot.hero === 'kaelis' ? 'Kaelis déploie ses ailes de phénix, exécute une rotation aérienne et fend la garde du Dragon du Zénith.' : 'Nyxara invoque un dragon astral articulé et le précipite contre le Dragon du Zénith dans une collision cosmique.'}</p>
             <div className="ultimate-stats">
               <div><span>DÉGÂTS</span><strong>{numberFormat.format(snapshot.damage)}</strong><small>{presentation.element}</small></div>
               <div><span>IMPACT</span><strong>{snapshot.mode === 'full' ? '4,50 s' : snapshot.mode === 'short' ? '1,35 s' : '0,32 s'}</strong><small>Événement unique</small></div>

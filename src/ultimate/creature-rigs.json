@@ -1,0 +1,160 @@
+{
+  "dragon": {
+    "width": 1408,
+    "height": 768,
+    "atlasWidth": 1600,
+    "atlasHeight": 897,
+    "drawOrder": [
+      "wing-rear",
+      "tail",
+      "wing-front",
+      "body",
+      "leg-rear",
+      "leg-front",
+      "neck",
+      "head"
+    ],
+    "parts": {
+      "body": {
+        "x": 5,
+        "y": 5,
+        "w": 447,
+        "h": 387,
+        "cx": 228,
+        "cy": 331,
+        "bone": "body"
+      },
+      "wing-front": {
+        "x": 457,
+        "y": 5,
+        "w": 933,
+        "h": 372,
+        "cx": 423,
+        "cy": 27,
+        "bone": "wingFront"
+      },
+      "leg-rear": {
+        "x": 1395,
+        "y": 5,
+        "w": 199,
+        "h": 322,
+        "cx": 498,
+        "cy": 423,
+        "bone": "legRear"
+      },
+      "leg-front": {
+        "x": 5,
+        "y": 397,
+        "w": 223,
+        "h": 302,
+        "cx": 230,
+        "cy": 456,
+        "bone": "legFront"
+      },
+      "neck": {
+        "x": 233,
+        "y": 397,
+        "w": 184,
+        "h": 247,
+        "cx": 224,
+        "cy": 291,
+        "bone": "neck"
+      },
+      "wing-rear": {
+        "x": 422,
+        "y": 397,
+        "w": 346,
+        "h": 238,
+        "cx": 181,
+        "cy": 118,
+        "bone": "wingRear"
+      },
+      "head": {
+        "x": 773,
+        "y": 397,
+        "w": 249,
+        "h": 209,
+        "cx": 149,
+        "cy": 158,
+        "bone": "head"
+      },
+      "tail": {
+        "x": 5,
+        "y": 704,
+        "w": 697,
+        "h": 188,
+        "cx": 663,
+        "cy": 444,
+        "bone": "tail"
+      }
+    }
+  },
+  "astral": {
+    "width": 1408,
+    "height": 768,
+    "atlasWidth": 1600,
+    "atlasHeight": 864,
+    "drawOrder": [
+      "tail",
+      "body",
+      "claws",
+      "neck",
+      "head"
+    ],
+    "parts": {
+      "body": {
+        "x": 5,
+        "y": 5,
+        "w": 1065,
+        "h": 506,
+        "cx": 223,
+        "cy": 120,
+        "bone": "body"
+      },
+      "tail": {
+        "x": 1075,
+        "y": 5,
+        "w": 392,
+        "h": 454,
+        "cx": 75,
+        "cy": 280,
+        "bone": "tail"
+      },
+      "head": {
+        "x": 5,
+        "y": 516,
+        "w": 432,
+        "h": 343,
+        "cx": 848,
+        "cy": 34,
+        "bone": "head"
+      },
+      "neck": {
+        "x": 442,
+        "y": 516,
+        "w": 470,
+        "h": 338,
+        "cx": 818,
+        "cy": 220,
+        "bone": "neck"
+      },
+      "claws": {
+        "x": 917,
+        "y": 516,
+        "w": 284,
+        "h": 246,
+        "cx": 853,
+        "cy": 498,
+        "bone": "claws"
+      }
+    }
+  },
+  "wing": {
+    "width": 1364,
+    "height": 726,
+    "pivot": [
+      118,
+      453
+    ]
+  }
+}

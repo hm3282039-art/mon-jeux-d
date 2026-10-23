@@ -7,13 +7,14 @@ import {
   easeOut,
   keyed,
   lerp,
-  radians,
   seededRandom,
   segment,
   smooth,
 } from './math'
 import { HERO_PRESENTATION, RigLibrary, rigPoint } from './rig'
 import type { HeroId, RigPose, RigTransform } from './rig'
+import { CreatureLibrary, creaturePoint } from './creatures'
+import type { CreaturePose } from './creatures'
 
 export type UltimateMode = 'full' | 'short' | 'instant'
 export type { HeroId } from './rig'
@@ -42,10 +43,15 @@ type SceneState = {
   pose: RigPose
   charge: number
 }
+type DragonState = {
+  transform: RigTransform
+  pose: CreaturePose
+}
 
 const TAU = Math.PI * 2
-const GOLEM_X = 970
-const GOLEM_GROUND = 575
+const DRAGON_X = 870
+const DRAGON_GROUND = 592
+const IMPACT_POINT = { x: 835, y: 440 }
 const CAMERA_BASE: Camera = {
   focusX: 640,
   focusY: 360,
@@ -75,27 +81,6 @@ function polygon(
     context.lineJoin = 'round'
     context.stroke()
   }
-}
-
-function segmentShape(
-  context: CanvasRenderingContext2D,
-  start: Point,
-  end: Point,
-  startWidth: number,
-  endWidth: number,
-  fill: string | CanvasGradient,
-) {
-  const dx = end.x - start.x
-  const dy = end.y - start.y
-  const length = Math.max(1, Math.hypot(dx, dy))
-  const nx = -dy / length
-  const ny = dx / length
-  polygon(context, [
-    { x: start.x + nx * startWidth, y: start.y + ny * startWidth },
-    { x: end.x + nx * endWidth, y: end.y + ny * endWidth },
-    { x: end.x - nx * endWidth, y: end.y - ny * endWidth },
-    { x: start.x - nx * startWidth, y: start.y - ny * startWidth },
-  ], fill)
 }
 
 function kaelisState(time: number, ambient: number): SceneState {
@@ -134,6 +119,18 @@ function kaelisState(time: number, ambient: number): SceneState {
     pose.legBack -= walk * 24
     pose.armFree += walk * 12
   }
+  // Keep the knees connected during the flip and dive: broad body motion comes
+  // from the root, while the lower body uses a compact, stable tucked pose.
+  const airStability = smooth(segment(time, 1.92, 2.28)) * (1 - smooth(segment(time, 4.9, 5.45)))
+  pose.legFront = lerp(pose.legFront, -10, airStability)
+  pose.legBack = lerp(pose.legBack, 12, airStability)
+  pose.legFrontLower = lerp(pose.legFrontLower, 16, airStability)
+  pose.legBackLower = lerp(pose.legBackLower, 12, airStability)
+  pose.skirt = lerp(pose.skirt, 3, airStability)
+  pose.legFront = clamp(pose.legFront, -34, 34)
+  pose.legBack = clamp(pose.legBack, -34, 34)
+  pose.legFrontLower = clamp(pose.legFrontLower, -12, 42)
+  pose.legBackLower = clamp(pose.legBackLower, -12, 42)
   pose.cape += Math.sin(ambient * 5.4) * 2.5
   pose.capeTip += Math.sin(ambient * 7.1 + 1) * 4
   pose.hair += Math.sin(ambient * 8.2) * 2
@@ -153,18 +150,19 @@ function kaelisState(time: number, ambient: number): SceneState {
     const air = smooth(segment(time, 2.35, 3.45))
     transform.x = lerp(650, 790, air)
     transform.y = lerp(426, 266, air) - Math.sin(air * Math.PI) * 74
-    transform.rotation = keyed(time, [[2.35, -18], [2.8, -48], [3.2, 5], [3.45, 48]], easeInOut)
+    // A complete aerial rotation, carried by the root while the tucked legs stay coherent.
+    transform.rotation = lerp(-18, 408, easeInOut(air))
     transform.scale = 1.04
   } else if (time >= 3.45 && time < 4.5) {
     const dive = easeIn(segment(time, 3.45, 4.5))
     transform.x = lerp(790, 770, dive)
     transform.y = lerp(266, 408, dive)
-    transform.rotation = lerp(48, 55, dive)
+    transform.rotation = lerp(408, 415, dive)
     transform.scale = lerp(1.04, 1, dive)
   } else if (time >= 4.5 && time < 5.65) {
     transform.x = keyed(time, [[4.5, 770], [4.7, 730], [5.18, 590], [5.65, 555]], easeOut)
     transform.y = keyed(time, [[4.5, 408], [4.72, 456], [5.18, 568], [5.65, 568]], easeOut)
-    transform.rotation = keyed(time, [[4.5, 55], [4.72, 18], [5.05, -12], [5.65, 0]], easeOut)
+    transform.rotation = keyed(time, [[4.5, 415], [4.72, 378], [5.05, 348], [5.65, 360]], easeOut)
     transform.y -= Math.sin(easeOut(segment(time, 4.5, 5.18)) * Math.PI) * 24
   } else if (time >= 5.65) {
     transform.x = keyed(time, [[5.65, 555], [7, 555], [8, 350]], easeInOut)
@@ -197,6 +195,11 @@ function nyxaraState(time: number, ambient: number): SceneState {
   }
   const desiredStaff = keyed(time, [[0, 0], [0.6, -8], [1.3, -18], [2.35, -30], [3.1, -15], [3.65, 45], [4.5, 65], [5.1, 15], [5.9, -10], [6.5, 0], [8, 0]], easeInOut)
   pose.staff = desiredStaff - pose.armRight - pose.forearmRight - pose.torso
+  const legStability = smooth(segment(time, 1.2, 1.65)) * (1 - smooth(segment(time, 4.85, 5.55)))
+  pose.legFront = lerp(pose.legFront, -6, legStability)
+  pose.legBack = lerp(pose.legBack, 8, legStability)
+  pose.legFrontLower = lerp(pose.legFrontLower, 10, legStability)
+  pose.legBackLower = lerp(pose.legBackLower, 12, legStability)
 
   const transform: RigTransform = { x: 350, y: 548, scale: 1, rotation: 0, facing: 1 }
   transform.y += keyed(time, [[0, 0], [0.5, 12], [1.2, 0], [8, 0]])
@@ -225,6 +228,36 @@ function nyxaraState(time: number, ambient: number): SceneState {
     transform.y = 548 + Math.sin(ambient * 2) * 2
   }
   return { transform, pose, charge: 0.15 + power * 0.85 }
+}
+
+function dragonState(time: number, ambient: number, cinematic: boolean): DragonState {
+  const hit = easeOut(segment(time, 4.5, 4.72))
+  const settle = smooth(segment(time, 5.05, 6.35))
+  const recoil = hit * (1 - settle)
+  const roar = smooth(segment(time, 4.62, 4.82)) * (1 - smooth(segment(time, 5.35, 5.9)))
+  const brace = cinematic ? smooth(segment(time, 3.55, 4.32)) * (1 - hit) : 0
+  const damaged = time >= 4.5
+  const breath = Math.sin(ambient * 1.65)
+  const vibration = Math.sin(ambient * 83) * recoil * (1 - segment(time, 4.5, 5.05))
+  const transform: RigTransform = {
+    x: DRAGON_X + recoil * 42 + vibration * 5,
+    y: DRAGON_GROUND - Math.sin(recoil * Math.PI) * 35 + roar * 5,
+    scale: 1,
+    rotation: recoil * 5 + breath * 0.25,
+    facing: 1,
+  }
+  const pose: CreaturePose = {
+    body: breath * 1.1 - brace * 4 + recoil * 9 - roar * 5,
+    head: Math.sin(ambient * 1.15 + 0.7) * 2.2 - brace * 11 - recoil * 19 - roar * 13,
+    neck: Math.sin(ambient * 1.3) * 1.4 - brace * 5 + recoil * 11 + roar * 9,
+    wingFront: Math.sin(ambient * 2.1) * 2.3 + brace * 13 - recoil * 20 - roar * 16,
+    wingRear: -Math.sin(ambient * 2.1 + 0.5) * 2 - brace * 9 + recoil * 15 + roar * 12,
+    tail: Math.sin(ambient * 1.8 + 1.2) * 4.5 + recoil * 17 + Math.sin(ambient * 5) * roar * 4,
+    legFront: -brace * 3 + recoil * 8,
+    legRear: brace * 2 - recoil * 6,
+  }
+  if (damaged) pose.head += Math.sin(ambient * 13) * roar * 1.5
+  return { transform, pose }
 }
 
 function stateAt(hero: HeroId, time: number, ambient: number) {
@@ -290,32 +323,32 @@ function cameraAt(hero: HeroId, time: number, ambient: number, state: SceneState
     const orbit = smooth(segment(time, 2.35, 3.45))
     camera = {
       focusX: lerp(state.transform.x - 20, state.transform.x + 15, orbit),
-      focusY: state.transform.y - 100,
-      zoom: lerp(0.96, 1.12, orbit),
+      focusY: state.transform.y - (hero === 'kaelis' ? 60 : 100),
+      zoom: hero === 'kaelis' ? lerp(0.88, 0.96, orbit) : lerp(0.96, 1.08, orbit),
       rotation: lerp(-0.1, 0.09, orbit),
       screenX: 640,
-      screenY: 390,
+      screenY: hero === 'kaelis' ? 300 : 390,
     }
   } else if (time < 4.5) {
     const chase = easeIn(segment(time, 3.45, 4.5))
     camera = {
       focusX: lerp(hero === 'kaelis' ? 785 : 690, 865, chase),
       focusY: lerp(hero === 'kaelis' ? 300 : 330, 420, chase),
-      zoom: lerp(0.91, 1.04, chase),
+      zoom: hero === 'kaelis' ? lerp(0.86, 0.98, chase) : lerp(0.91, 1.04, chase),
       rotation: lerp(-0.1, -0.025, chase),
       screenX: 630,
-      screenY: 370,
+      screenY: hero === 'kaelis' ? 390 : 370,
     }
   } else if (time < 5.65) {
     const settle = easeOut(segment(time, 4.5, 5.65))
-    const shake = 21 * Math.exp(-(time - 4.5) * 4.7)
+    const shake = 30 * Math.exp(-(time - 4.5) * 4.7)
     camera = {
-      focusX: lerp(855, 760, settle) + Math.sin(ambient * 91) * shake,
+      focusX: lerp(835, 760, settle) + Math.sin(ambient * 91) * shake,
       focusY: lerp(425, 405, settle) + Math.cos(ambient * 77) * shake * 0.65,
-      zoom: lerp(1.13, 1.02, settle),
+      zoom: lerp(hero === 'kaelis' ? 1.16 : 1.08, 1.02, settle),
       rotation: Math.sin(ambient * 67) * shake * 0.0015,
       screenX: 640,
-      screenY: 370,
+      screenY: hero === 'kaelis' ? 410 : 400,
     }
   } else if (time < 6.75) {
     const recover = smooth(segment(time, 5.65, 6.75))
@@ -338,6 +371,7 @@ export class ZenithRenderer {
   private readonly context: CanvasRenderingContext2D
   private readonly arena: HTMLImageElement
   private readonly rigs = new RigLibrary()
+  private readonly creatures = new CreatureLibrary()
   private readonly stars: Array<{ x: number; y: number; size: number; phase: number }>
   private readonly debris: Array<{ angle: number; speed: number; size: number; spin: number; lift: number }>
 
@@ -377,14 +411,15 @@ export class ZenithRenderer {
   private drawIdle(frame: RenderFrame) {
     const context = this.context
     const state = idleState(frame.hero, frame.ambient)
-    const camera = { ...CAMERA_BASE, focusX: 640 + Math.sin(frame.ambient * 0.18) * 3 }
+    const camera = { ...CAMERA_BASE, focusX: 640 + Math.sin(frame.ambient * 0.18) * 3, zoom: 0.96 }
     context.save()
     applyCamera(context, camera)
     this.drawArena(frame.ambient, 0, frame.hero)
+    if (frame.impactApplied) this.drawCrater(8, frame.hero)
     this.drawAmbientMotes(frame.ambient, 0.5, frame.hero)
     this.drawShadow(state.transform.x, 572, 66, frame.hero === 'nyxara' ? 0.16 : 0.24)
-    this.drawShadow(GOLEM_X, GOLEM_GROUND + 3, 85, 0.28)
-    this.drawGolem(frame.impactApplied ? 8 : 0, frame.ambient, false, frame.hero)
+    this.drawShadow(DRAGON_X + 55, DRAGON_GROUND + 3, 175, 0.32)
+    this.drawDragon(frame.impactApplied ? 8 : 0, frame.ambient, false, frame.hero)
     this.rigs.draw(context, frame.hero, state.pose, state.transform, frame.ambient, state.charge)
     context.restore()
     this.drawVignette(0.34)
@@ -393,20 +428,24 @@ export class ZenithRenderer {
   private drawCinematic(frame: RenderFrame) {
     const context = this.context
     const time = frame.time
-    const state = stateAt(frame.hero, time, frame.ambient)
+    // A short hit-stop gives the contact weight without delaying the gameplay event.
+    const poseTime = time > 4.5 && time < 4.58 ? 4.5 : time
+    const state = stateAt(frame.hero, poseTime, frame.ambient)
     const camera = cameraAt(frame.hero, time, frame.ambient, state)
     const voidAmount = smooth(segment(time, 0.42, 0.72)) * (1 - smooth(segment(time, 1.18, 1.55)))
     context.save()
     applyCamera(context, camera)
     this.drawArena(frame.ambient, voidAmount, frame.hero)
     if (voidAmount > 0.01) this.drawVoid(frame.ambient, voidAmount, frame.hero)
+    this.drawCrater(time, frame.hero)
     this.drawMagic(time, frame.ambient, state, frame.hero)
     this.drawAmbientMotes(frame.ambient, 0.65, frame.hero)
     this.drawShadow(state.transform.x, 572, 66, 0.25 * clamp(1 - (568 - state.transform.y) / 420, 0.1, 1))
-    this.drawShadow(GOLEM_X, GOLEM_GROUND + 3, 85, 0.28)
-    if (frame.hero === 'kaelis') this.drawPhoenix(time, frame.ambient, state)
-    else this.drawAstralSerpent(time, frame.ambient, state)
-    this.drawGolem(time, frame.ambient, true, frame.hero)
+    this.drawShadow(DRAGON_X + 55, DRAGON_GROUND + 3, 175, 0.32)
+    if (frame.hero === 'kaelis') this.drawPhoenix(poseTime, frame.ambient, state)
+    else this.drawAstralDragon(time, frame.ambient, state)
+    this.drawDragon(poseTime, frame.ambient, true, frame.hero)
+    this.drawHeroAfterimages(time, frame.ambient, frame.hero)
     this.rigs.draw(context, frame.hero, state.pose, state.transform, frame.ambient, state.charge)
     this.drawWeaponTrails(time, frame.ambient, frame.hero)
     this.drawImpactWorld(time, frame.ambient, frame.hero)
@@ -437,11 +476,12 @@ export class ZenithRenderer {
     context.save()
     applyCamera(context, CAMERA_BASE)
     this.drawArena(frame.ambient, 0, frame.hero)
+    if (time >= hitTime) this.drawCrater(visualTime, frame.hero)
     this.drawAmbientMotes(frame.ambient, 0.5, frame.hero)
     this.drawShadow(state.transform.x, 572, 66, 0.2)
-    this.drawShadow(GOLEM_X, GOLEM_GROUND + 3, 85, 0.28)
-    if (frame.hero === 'nyxara' && time > 0.08) this.drawInstantAstralBolt(time)
-    this.drawGolem(visualTime, frame.ambient, true, frame.hero)
+    this.drawShadow(DRAGON_X + 55, DRAGON_GROUND + 3, 175, 0.32)
+    if (frame.hero === 'nyxara' && time > 0.08) this.drawInstantAstralDragon(time)
+    this.drawDragon(visualTime, frame.ambient, true, frame.hero)
     this.rigs.draw(context, frame.hero, state.pose, state.transform, frame.ambient, 0.8)
     if (time >= hitTime) this.drawImpactWorld(visualTime, frame.ambient, frame.hero)
     context.restore()
@@ -574,173 +614,161 @@ export class ZenithRenderer {
     context.restore()
   }
 
-  private drawPhoenix(time: number, ambient: number, state: SceneState) {
-    const power = smooth(segment(time, 2.05, 2.55)) * (1 - smooth(segment(time, 3.55, 4.05)))
-    if (power <= 0) return
-    const context = this.context
-    const anchor = rigPoint('kaelis', state.pose, state.transform, 'torso', [510, 390])
-    context.save()
-    context.translate(anchor[0], anchor[1])
-    context.rotate(radians(state.transform.rotation * 0.45))
-    for (const side of [-1, 1]) {
-      const flutter = Math.sin(ambient * 8 + side) * 9
-      const wing = context.createLinearGradient(0, 0, side * 230, -120)
-      wing.addColorStop(0, `rgba(255, 220, 110, ${power * 0.62})`)
-      wing.addColorStop(0.5, `rgba(255, 120, 25, ${power * 0.55})`)
-      wing.addColorStop(1, `rgba(255, 65, 15, ${power * 0.18})`)
-      context.fillStyle = wing
-      context.strokeStyle = `rgba(255, 195, 88, ${power * 0.7})`
-      context.lineWidth = 2
-      context.beginPath()
-      context.moveTo(0, 12)
-      context.bezierCurveTo(side * 45, -55, side * 145, -150, side * 238, -132 + flutter)
-      for (let feather = 0; feather < 8; feather += 1) {
-        const x = 232 - feather * 25
-        const y = -120 + feather * 24
-        context.lineTo(side * x, y + flutter * (1 - feather / 10))
-        context.lineTo(side * (x - 17), y + 8)
-      }
-      context.closePath()
-      context.fill()
-      context.stroke()
-      context.save()
-      context.globalCompositeOperation = 'lighter'
-      context.lineCap = 'round'
-      for (let feather = 0; feather < 10; feather += 1) {
-        const spread = 52 + feather * 19
-        const lift = 22 + feather * 12
-        context.strokeStyle = `rgba(${feather % 3 ? '255, 146, 35' : '255, 205, 95'}, ${power * (0.68 - feather * 0.04)})`
-        context.lineWidth = 4.5 - feather * 0.3
-        context.beginPath()
-        context.moveTo(0, 5)
-        context.quadraticCurveTo(side * spread * 0.48, -lift * 0.35, side * spread, -lift + flutter * (0.4 + feather / 14))
-        context.stroke()
-      }
-      context.restore()
+  private drawHeroAfterimages(time: number, ambient: number, hero: HeroId) {
+    if (hero !== 'kaelis' || time < 3.58 || time > 4.5) return
+    const intensity = smooth(segment(time, 3.58, 3.82)) * (1 - smooth(segment(time, 4.38, 4.5)))
+    for (let index = 2; index >= 1; index -= 1) {
+      const sampleTime = Math.max(3.45, time - index * 0.045)
+      const sample = stateAt(hero, sampleTime, ambient - index * 0.045)
+      this.rigs.draw(this.context, hero, sample.pose, sample.transform, ambient, sample.charge, intensity * (0.055 + index * 0.025))
     }
-    context.save()
-    context.globalCompositeOperation = 'lighter'
-    for (let ember = 0; ember < 22; ember += 1) {
-      const angle = ember * 2.4 + ambient * (0.7 + ember % 3 * 0.2)
-      const radius = 55 + ember * 8
-      const x = Math.cos(angle) * radius
-      const y = Math.sin(angle * 0.8) * 65 - ember * 4
-      context.fillStyle = `rgba(255, ${170 + ember % 4 * 18}, 84, ${power * (0.25 + ember % 3 * 0.15)})`
-      context.beginPath()
-      context.arc(x, y, 1.5 + ember % 3, 0, TAU)
-      context.fill()
-    }
-    context.fillStyle = `rgba(255, 230, 153, ${power * 0.9})`
-    context.beginPath()
-    context.moveTo(0, -20)
-    context.lineTo(13, 4)
-    context.lineTo(0, 34)
-    context.lineTo(-13, 4)
-    context.closePath()
-    context.fill()
-    context.restore()
-    context.restore()
   }
 
-  private drawAstralSerpent(time: number, ambient: number, state: SceneState) {
-    const appear = smooth(segment(time, 1.75, 2.25)) * (1 - smooth(segment(time, 4.52, 5.05)))
-    if (appear <= 0) return
+  private drawCrater(time: number, hero: HeroId) {
+    if (time < 4.5) return
     const context = this.context
-    const origin = rigPoint('nyxara', state.pose, state.transform, 'staff', [755, 220])
-    const dive = easeInOut(segment(time, 3.45, 4.5))
-    const points: Point[] = []
-    const count = 34
-    for (let index = 0; index < count; index += 1) {
-      if (time < 3.45) {
-        const angle = ambient * 1.9 - index * 0.31
-        const radius = 48 + index * 3.7
-        points.push({
-          x: origin[0] + Math.cos(angle) * radius - index * 1.2,
-          y: origin[1] - 55 + Math.sin(angle) * radius * 0.5 - index * 1.1,
-        })
-      } else {
-        // The head leads the dive; the tail follows with a delayed, slithering trajectory.
-        const amount = clamp(dive - (count - 1 - index) * 0.018)
-        const start = origin
-        const end = { x: 915, y: 440 }
-        const inv = 1 - amount
-        const baseX = inv * inv * inv * start[0] + 3 * inv * inv * amount * (start[0] + 170) + 3 * inv * amount * amount * 780 + amount * amount * amount * end.x
-        const baseY = inv * inv * inv * start[1] + 3 * inv * inv * amount * (start[1] - 170) + 3 * inv * amount * amount * 180 + amount * amount * amount * end.y
-        const wave = Math.sin(amount * 12 - index * 0.38 + ambient * 4) * 22 * (1 - amount * 0.72)
-        points.push({ x: baseX - wave * 0.55, y: baseY + wave })
-      }
-    }
-    const tracePath = () => {
-      context.beginPath()
-      context.moveTo(points[0].x, points[0].y)
-      for (let index = 1; index < points.length - 1; index += 1) {
-        const middleX = (points[index].x + points[index + 1].x) / 2
-        const middleY = (points[index].y + points[index + 1].y) / 2
-        context.quadraticCurveTo(points[index].x, points[index].y, middleX, middleY)
-      }
-      const head = points[points.length - 1]
-      context.lineTo(head.x, head.y)
-    }
+    const enter = easeOut(segment(time, 4.5, 4.88))
+    const glow = 1 - smooth(segment(time, 5.0, 7.8))
+    const rgb = hero === 'kaelis' ? '255, 156, 55' : '154, 113, 255'
+    context.save()
+    context.translate(870, 566)
+    context.scale(1, 0.28)
+    const crater = context.createRadialGradient(0, 0, 8, 0, 0, 128)
+    crater.addColorStop(0, `rgba(3, 7, 17, ${0.76 * enter})`)
+    crater.addColorStop(0.48, `rgba(18, 23, 35, ${0.64 * enter})`)
+    crater.addColorStop(0.78, `rgba(${rgb}, ${0.15 * glow * enter})`)
+    crater.addColorStop(1, 'rgba(5, 10, 20, 0)')
+    context.fillStyle = crater
+    context.beginPath()
+    context.ellipse(0, 0, 128 * enter, 94 * enter, 0, 0, TAU)
+    context.fill()
+    context.restore()
     context.save()
     context.lineCap = 'round'
-    context.lineJoin = 'round'
-    context.strokeStyle = `rgba(43, 24, 100, ${appear * 0.9})`
-    context.lineWidth = 25
-    tracePath()
-    context.stroke()
-    context.globalCompositeOperation = 'lighter'
-    context.strokeStyle = `rgba(117, 103, 235, ${appear * 0.82})`
-    context.lineWidth = 17
-    tracePath()
-    context.stroke()
-    context.strokeStyle = `rgba(126, 231, 255, ${appear * 0.72})`
-    context.lineWidth = 7
-    tracePath()
-    context.stroke()
-    context.strokeStyle = `rgba(239, 253, 255, ${appear * 0.55})`
-    context.lineWidth = 2
-    context.setLineDash([2, 15])
-    context.lineDashOffset = -ambient * 25
-    tracePath()
-    context.stroke()
-    context.setLineDash([])
-    const head = points[points.length - 1]
-    const neck = points[points.length - 2]
-    const angle = Math.atan2(head.y - neck.y, head.x - neck.x)
-    context.globalCompositeOperation = 'source-over'
-    context.translate(head.x, head.y)
-    context.rotate(angle)
-    polygon(context, [{ x: 25, y: 0 }, { x: 10, y: -11 }, { x: -9, y: -13 }, { x: -20, y: -7 }, { x: -20, y: 7 }, { x: -9, y: 13 }, { x: 10, y: 11 }], '#5d45a5', '#b5f4ff', 2)
-    polygon(context, [{ x: -8, y: -10 }, { x: -20, y: -24 }, { x: 2, y: -12 }], '#a58be8', '#d5c8ff', 1)
-    polygon(context, [{ x: -8, y: 10 }, { x: -20, y: 24 }, { x: 2, y: 12 }], '#a58be8', '#d5c8ff', 1)
-    context.fillStyle = '#eaffff'
-    context.shadowColor = '#8fffff'
-    context.shadowBlur = 8
-    context.beginPath()
-    context.ellipse(8, -5, 3.2, 2.2, 0, 0, TAU)
-    context.ellipse(8, 5, 3.2, 2.2, 0, 0, TAU)
-    context.fill()
+    for (let ray = 0; ray < 11; ray += 1) {
+      const angle = ray / 11 * TAU + 0.17
+      const length = (62 + ray % 4 * 23) * enter
+      const startX = 870 + Math.cos(angle) * 26
+      const startY = 566 + Math.sin(angle) * 10
+      const middleX = 870 + Math.cos(angle + 0.08) * length * 0.58
+      const middleY = 566 + Math.sin(angle + 0.08) * length * 0.22
+      const endX = 870 + Math.cos(angle) * length
+      const endY = 566 + Math.sin(angle) * length * 0.28
+      context.strokeStyle = `rgba(5, 10, 20, ${0.68 * enter})`
+      context.lineWidth = 4 - ray % 3 * 0.7
+      context.beginPath()
+      context.moveTo(startX, startY)
+      context.lineTo(middleX, middleY)
+      context.lineTo(endX, endY)
+      context.stroke()
+      context.strokeStyle = `rgba(${rgb}, ${0.26 * glow * enter})`
+      context.lineWidth = 1.2
+      context.stroke()
+    }
     context.restore()
   }
 
-  private drawInstantAstralBolt(time: number) {
+  private drawPhoenix(time: number, ambient: number, state: SceneState) {
+    const spread = smooth(segment(time, 2.0, 2.48))
+    const power = spread * (1 - smooth(segment(time, 5.05, 5.65)))
+    if (power <= 0.005) return
     const context = this.context
-    const amount = easeOut(segment(time, 0.08, 0.34))
-    const x = lerp(560, 915, amount)
-    const y = lerp(260, 440, amount)
+    const anchor = rigPoint('kaelis', state.pose, state.transform, 'torso', [520, 330])
+    const bodyAngle = state.transform.rotation + (state.pose.torso || 0) * 0.7
+    const dive = smooth(segment(time, 3.4, 4.15))
+    const flap = Math.sin(ambient * 7.5) * 6 + Math.sin(ambient * 3.1) * 3
+    const flipTuck = smooth(segment(time, 2.35, 2.6)) * (1 - smooth(segment(time, 3.15, 3.45)))
+    const scale = 0.21 * state.transform.scale * (0.48 + spread * 0.52) * (1 - flipTuck * 0.16)
+    context.save()
+    context.shadowColor = 'rgba(255, 126, 36, 0.5)'
+    context.shadowBlur = 10 * power
+    for (const side of [-1, 1] as const) {
+      const rotation = bodyAngle + side * ((1 - spread) * 58 - 10 - flap * spread + dive * 18)
+      this.creatures.drawWing(context, anchor[0], anchor[1], rotation, scale, side, power * 0.96)
+    }
+    context.restore()
     context.save()
     context.globalCompositeOperation = 'lighter'
-    context.strokeStyle = 'rgba(157, 229, 255, 0.65)'
-    context.lineWidth = 10
+    const rootGlow = context.createRadialGradient(anchor[0], anchor[1], 0, anchor[0], anchor[1], 62)
+    rootGlow.addColorStop(0, `rgba(255, 225, 143, ${0.34 * power})`)
+    rootGlow.addColorStop(1, 'rgba(255, 112, 24, 0)')
+    context.fillStyle = rootGlow
     context.beginPath()
-    context.moveTo(lerp(560, x, 0.6), lerp(260, y, 0.6))
-    context.lineTo(x, y)
-    context.stroke()
-    context.fillStyle = '#e6ffff'
-    context.beginPath()
-    context.arc(x, y, 9, 0, TAU)
+    context.arc(anchor[0], anchor[1], 62, 0, TAU)
     context.fill()
+    for (let ember = 0; ember < 20; ember += 1) {
+      const age = (ambient * (0.32 + ember % 4 * 0.035) + ember * 0.137) % 1
+      const side = ember % 2 ? -1 : 1
+      const x = anchor[0] + side * (45 + ember * 9) * spread + Math.sin(ambient * 3 + ember) * 12
+      const y = anchor[1] - 35 - age * 150 + Math.cos(ember * 2.2) * 32
+      context.fillStyle = `rgba(255, ${150 + ember % 5 * 18}, 65, ${power * (1 - age) * 0.72})`
+      context.beginPath()
+      context.arc(x, y, 1.2 + ember % 3 * 0.7, 0, TAU)
+      context.fill()
+    }
     context.restore()
+  }
+
+  private drawAstralDragon(time: number, ambient: number, state: SceneState) {
+    const appear = smooth(segment(time, 1.7, 2.15)) * (1 - smooth(segment(time, 4.72, 5.25)))
+    if (appear <= 0.005) return
+    const dive = easeInOut(segment(time, 3.45, 4.5))
+    const orbit = smooth(segment(time, 1.7, 3.45))
+    const post = segment(time, 4.5, 4.9)
+    let x: number
+    let y: number
+    let rotation: number
+    let scale = 1
+    if (time < 3.45) {
+      x = lerp(430, 610, orbit) + Math.sin(ambient * 1.8) * 18
+      y = lerp(290, 230, orbit) - Math.sin(orbit * Math.PI) * 50
+      rotation = lerp(-18, -12, orbit) + Math.sin(ambient * 2) * 5
+      scale = lerp(0.72, 1, smooth(segment(time, 1.7, 2.4)))
+    } else {
+      x = lerp(610, 670, dive) + Math.sin(dive * Math.PI) * 40 + post * 30
+      y = lerp(230, 450, dive) - Math.sin(dive * Math.PI) * 85 + post * 15
+      rotation = lerp(-12, 20, dive) - Math.sin(dive * Math.PI) * 14 + post * 8
+    }
+    const transform: RigTransform = { x, y, scale, rotation, facing: 1 }
+    const pose: CreaturePose = {
+      body: Math.sin(ambient * 2.4) * 2.5,
+      tail: Math.sin(ambient * 3.2 + 0.8) * 10 + dive * 9,
+      neck: Math.sin(ambient * 2.1) * 2 - dive * 8,
+      head: Math.sin(ambient * 2.8 + 1.2) * 2.5 + dive * 8,
+      claws: -dive * 12 + Math.sin(ambient * 3.6) * 3,
+    }
+    // The staff remains the visual origin of the summon during its first orbit.
+    if (time < 2.35) {
+      const staff = rigPoint('nyxara', state.pose, state.transform, 'staff', [755, 220])
+      const link = 1 - smooth(segment(time, 2.0, 2.35))
+      transform.x = lerp(transform.x, staff[0] - 80, link * 0.35)
+      transform.y = lerp(transform.y, staff[1] - 20, link * 0.35)
+    }
+    this.context.save()
+    this.context.shadowColor = 'rgba(100, 225, 255, 0.48)'
+    this.context.shadowBlur = 13 * appear
+    this.creatures.draw(this.context, 'astral', pose, transform, appear * 0.96)
+    this.context.restore()
+  }
+
+  private drawInstantAstralDragon(time: number) {
+    const amount = easeInOut(segment(time, 0.08, 0.34))
+    const alpha = 1 - smooth(segment(time, 0.35, 0.55))
+    const transform: RigTransform = {
+      x: lerp(520, 670, amount),
+      y: lerp(260, 450, amount),
+      scale: 0.78,
+      rotation: lerp(-12, 20, amount),
+      facing: 1,
+    }
+    const pose: CreaturePose = {
+      body: 0,
+      tail: -10 + amount * 18,
+      neck: -amount * 8,
+      head: amount * 8,
+      claws: -amount * 12,
+    }
+    this.creatures.draw(this.context, 'astral', pose, transform, alpha * 0.9)
   }
 
   private drawShadow(x: number, y: number, radius: number, opacity: number) {
@@ -758,140 +786,166 @@ export class ZenithRenderer {
     context.restore()
   }
 
-  private drawGolem(time: number, ambient: number, cinematic: boolean, hero: HeroId) {
+  private drawDragon(time: number, ambient: number, cinematic: boolean, hero: HeroId) {
+    const state = dragonState(time, ambient, cinematic)
     const context = this.context
-    const hit = easeOut(segment(time, 4.5, 4.64))
-    const reaction = smooth(segment(time, 4.5, 5.65))
-    const brace = cinematic ? smooth(segment(time, 3.75, 4.38)) * (1 - hit) : 0
-    const damaged = time >= 4.5
-    const rootX = GOLEM_X + hit * 35 + Math.sin(ambient * 64) * (1 - segment(time, 4.5, 4.95)) * hit * 5
-    const lift = hero === 'nyxara' ? Math.sin(reaction * Math.PI) * 32 : 0
-    const rootY = GOLEM_GROUND + reaction * 24 - lift
-    const bodyRotation = radians(hit * 13 - brace * 4 + Math.sin(ambient * 1.3) * (damaged ? 0 : 1))
-    const hitColor = hero === 'kaelis' ? '#ffc767' : '#c29aff'
+    this.creatures.draw(context, 'dragon', state.pose, state.transform)
+    const roar = smooth(segment(time, 4.62, 4.82)) * (1 - smooth(segment(time, 5.35, 5.9)))
+    const eye = creaturePoint('dragon', state.pose, state.transform, 'head', [200, 280])
     context.save()
-    context.translate(rootX, rootY)
-    context.rotate(bodyRotation)
-    context.lineJoin = 'round'
-    const rock = context.createLinearGradient(-70, -190, 70, 0)
-    rock.addColorStop(0, '#52647b')
-    rock.addColorStop(0.45, '#26364e')
-    rock.addColorStop(1, '#101a2d')
-    const leftShoulder = { x: -52, y: -150 }
-    const leftElbow = { x: -86 - brace * 15 + hit * 24, y: -105 - brace * 48 - hit * 25 }
-    const leftHand = { x: -72 - brace * 30 + hit * 50, y: -62 - brace * 75 - hit * 40 }
-    segmentShape(context, leftShoulder, leftElbow, 24, 20, rock)
-    segmentShape(context, leftElbow, leftHand, 22, 18, rock)
-    const kneeDrop = reaction * 28
-    segmentShape(context, { x: -27, y: -62 }, { x: -40 - reaction * 12, y: -20 + kneeDrop }, 26, 22, rock)
-    segmentShape(context, { x: -40 - reaction * 12, y: -20 + kneeDrop }, { x: -54, y: 0 }, 23, 20, rock)
-    segmentShape(context, { x: 27, y: -62 }, { x: 42 + reaction * 20, y: -18 + kneeDrop * 0.6 }, 26, 22, rock)
-    segmentShape(context, { x: 42 + reaction * 20, y: -18 + kneeDrop * 0.6 }, { x: 55, y: 0 }, 23, 20, rock)
-    polygon(context, [{ x: -48, y: -169 }, { x: -20, y: -191 }, { x: 29, y: -185 }, { x: 55, y: -153 }, { x: 45, y: -72 }, { x: 21, y: -48 }, { x: -28, y: -54 }, { x: -52, y: -92 }], rock, '#111a2b', 4)
-    polygon(context, [{ x: -48, y: -169 }, { x: -20, y: -191 }, { x: -7, y: -143 }, { x: -34, y: -114 }], '#40566e', '#677a8e', 1.5)
-    polygon(context, [{ x: 29, y: -185 }, { x: 55, y: -153 }, { x: 30, y: -120 }, { x: 7, y: -143 }], '#1b2b43', '#566c83', 1.5)
-    const corePulse = 0.7 + Math.sin(ambient * (damaged ? 18 : 4)) * 0.2
-    context.save()
-    context.shadowColor = damaged ? hitColor : '#5deeff'
-    context.shadowBlur = 12 + corePulse * 10
-    polygon(context, [{ x: 0, y: -157 }, { x: 25, y: -130 }, { x: 16, y: -92 }, { x: 0, y: -77 }, { x: -19, y: -97 }, { x: -25, y: -130 }], damaged ? hitColor : '#39cbe7', '#b8fbff', 2.5)
-    polygon(context, [{ x: 0, y: -146 }, { x: 13, y: -127 }, { x: 7, y: -103 }, { x: 0, y: -94 }, { x: -9, y: -108 }, { x: -12, y: -128 }], damaged ? '#fff3c4' : '#c4ffff', 'transparent', 0)
-    context.restore()
-    context.save()
-    context.translate(4 + hit * 8, -205 + reaction * 5)
-    context.rotate(radians(-brace * 8 + hit * 18))
-    polygon(context, [{ x: -29, y: -22 }, { x: 0, y: -36 }, { x: 30, y: -19 }, { x: 25, y: 18 }, { x: 0, y: 30 }, { x: -27, y: 15 }], rock, '#111a2b', 3)
-    context.strokeStyle = damaged ? hitColor : '#8df6ff'
-    context.lineWidth = 5
-    context.shadowColor = context.strokeStyle
-    context.shadowBlur = 9
+    context.globalCompositeOperation = 'lighter'
+    const eyeGlow = context.createRadialGradient(eye[0], eye[1], 0, eye[0], eye[1], 18 + roar * 12)
+    eyeGlow.addColorStop(0, `rgba(160, 250, 255, ${0.5 + roar * 0.3})`)
+    eyeGlow.addColorStop(0.25, `rgba(61, 216, 255, ${0.25 + roar * 0.25})`)
+    eyeGlow.addColorStop(1, 'rgba(32, 145, 255, 0)')
+    context.fillStyle = eyeGlow
     context.beginPath()
-    context.moveTo(-18, -5)
-    context.lineTo(-5, -8 + brace * 4)
-    context.moveTo(7, -8 + brace * 4)
-    context.lineTo(20, -4)
-    context.stroke()
-    context.restore()
-    const rightShoulder = { x: 49, y: -151 }
-    const rightElbow = { x: 82 + brace * 5 + hit * 30, y: -108 - brace * 42 - hit * 12 }
-    const rightHand = { x: 70 - brace * 25 + hit * 58, y: -62 - brace * 78 - hit * 20 }
-    segmentShape(context, rightShoulder, rightElbow, 25, 21, rock)
-    segmentShape(context, rightElbow, rightHand, 23, 18, rock)
-    ;[leftElbow, leftHand, rightElbow, rightHand].forEach((joint, index) => {
-      polygon(context, [{ x: joint.x - 15, y: joint.y - 12 }, { x: joint.x + 10, y: joint.y - 16 }, { x: joint.x + 18, y: joint.y + 5 }, { x: joint.x, y: joint.y + 18 }, { x: joint.x - 17, y: joint.y + 8 }], index % 2 ? '#31465e' : '#3c5269', '#172235', 2)
-    })
-    if (damaged) {
-      const crack = easeOut(segment(time, 4.5, 4.9))
-      context.strokeStyle = hitColor
-      context.lineWidth = 2.2
-      context.shadowColor = hitColor
-      context.shadowBlur = 7
-      const cracks: Point[][] = [
-        [{ x: -2, y: -130 }, { x: -30, y: -143 }, { x: -45, y: -137 }],
-        [{ x: 2, y: -126 }, { x: 30, y: -143 }, { x: 43, y: -159 }],
-        [{ x: 0, y: -116 }, { x: -19, y: -91 }, { x: -15, y: -68 }],
-        [{ x: 8, y: -113 }, { x: 30, y: -93 }, { x: 26, y: -71 }],
-      ]
-      cracks.forEach(points => {
+    context.arc(eye[0], eye[1], 18 + roar * 12, 0, TAU)
+    context.fill()
+    if (roar > 0.02) {
+      const mouth = creaturePoint('dragon', state.pose, state.transform, 'head', [158, 315])
+      const breath = context.createRadialGradient(mouth[0], mouth[1], 0, mouth[0], mouth[1], 54)
+      breath.addColorStop(0, `rgba(170, 248, 255, ${roar * 0.34})`)
+      breath.addColorStop(0.35, `rgba(71, 183, 255, ${roar * 0.16})`)
+      breath.addColorStop(1, 'rgba(50, 110, 255, 0)')
+      context.fillStyle = breath
+      context.beginPath()
+      context.arc(mouth[0], mouth[1], 54, 0, TAU)
+      context.fill()
+    }
+    if (time >= 4.5) {
+      const scar = easeOut(segment(time, 4.5, 4.82))
+      const wound = creaturePoint('dragon', state.pose, state.transform, 'neck', [320, 380])
+      const rgb = hero === 'kaelis' ? '255, 182, 70' : '180, 132, 255'
+      const glow = context.createRadialGradient(wound[0], wound[1], 0, wound[0], wound[1], 52)
+      glow.addColorStop(0, `rgba(${rgb}, ${0.4 * scar})`)
+      glow.addColorStop(1, `rgba(${rgb}, 0)`)
+      context.fillStyle = glow
+      context.beginPath()
+      context.arc(wound[0], wound[1], 52, 0, TAU)
+      context.fill()
+      context.strokeStyle = `rgba(${rgb}, ${0.82 * scar})`
+      context.lineWidth = 2.4
+      context.lineCap = 'round'
+      for (let cut = -1; cut <= 1; cut += 1) {
         context.beginPath()
-        context.moveTo(points[0].x, points[0].y)
-        points.slice(1).forEach((point, index) => {
-          const amount = clamp(crack * 1.5 - index * 0.35)
-          const previous = points[index]
-          context.lineTo(lerp(previous.x, point.x, amount), lerp(previous.y, point.y, amount))
-        })
+        context.moveTo(wound[0] - 24 + cut * 9, wound[1] - 30)
+        context.lineTo(wound[0] + 18 + cut * 9, wound[1] + 28)
         context.stroke()
-      })
-      context.shadowBlur = 0
+      }
     }
     context.restore()
   }
 
   private drawImpactWorld(time: number, ambient: number, hero: HeroId) {
-    if (time < 4.5 || time > 6.1) return
+    if (time < 4.5 || time > 6.35) return
     const context = this.context
     const elapsed = time - 4.5
-    const origin = { x: 915, y: 440 }
-    const ring = easeOut(segment(elapsed, 0, 0.7))
-    const rgb = hero === 'kaelis' ? '255, 211, 125' : '170, 142, 255'
+    const origin = IMPACT_POINT
+    const ring = easeOut(segment(elapsed, 0, 0.82))
+    const burst = easeOut(segment(elapsed, 0, 0.2))
+    const fade = 1 - smooth(segment(elapsed, 0.75, 1.75))
+    const rgb = hero === 'kaelis' ? '255, 185, 66' : '173, 128, 255'
+    const secondary = hero === 'kaelis' ? '255, 236, 174' : '116, 236, 255'
     context.save()
     context.globalCompositeOperation = 'lighter'
-    context.strokeStyle = `rgba(${rgb}, ${1 - ring})`
-    context.lineWidth = 8 * (1 - ring) + 1
-    context.beginPath()
-    context.arc(origin.x, origin.y, 20 + ring * 310, 0, TAU)
-    context.stroke()
+
+    const pillar = smooth(segment(elapsed, 0.025, 0.14)) * (1 - smooth(segment(elapsed, 0.42, 1.15)))
+    if (pillar > 0) {
+      const width = 34 + burst * 68
+      const beam = context.createLinearGradient(origin.x - width, 0, origin.x + width, 0)
+      beam.addColorStop(0, `rgba(${rgb}, 0)`)
+      beam.addColorStop(0.36, `rgba(${rgb}, ${pillar * 0.1})`)
+      beam.addColorStop(0.5, `rgba(${secondary}, ${pillar * 0.34})`)
+      beam.addColorStop(0.64, `rgba(${rgb}, ${pillar * 0.1})`)
+      beam.addColorStop(1, `rgba(${rgb}, 0)`)
+      context.fillStyle = beam
+      context.fillRect(origin.x - width, 130, width * 2, 450)
+    }
+
     context.save()
-    context.translate(origin.x, 560)
-    context.scale(1, 0.24)
-    context.strokeStyle = `rgba(90, 225, 255, ${0.65 * (1 - ring)})`
-    context.lineWidth = 10
+    context.translate(origin.x, origin.y)
+    context.rotate(hero === 'kaelis' ? -0.48 : 0.28)
+    context.lineCap = 'round'
+    const slashAlpha = (1 - smooth(segment(elapsed, 0.08, 0.48))) * burst
+    context.strokeStyle = `rgba(${rgb}, ${slashAlpha * 0.72})`
+    context.lineWidth = 5 + (1 - burst) * 25
     context.beginPath()
-    context.arc(0, 0, 30 + ring * 440, 0, TAU)
+    context.arc(0, 0, 45 + burst * 142, -2.42, 0.68)
+    context.stroke()
+    context.strokeStyle = `rgba(255, 255, 255, ${slashAlpha * 0.86})`
+    context.lineWidth = 2 + (1 - burst) * 6
+    context.beginPath()
+    context.arc(0, 0, 45 + burst * 142, -2.38, 0.58)
     context.stroke()
     context.restore()
-    for (let ray = 0; ray < 12; ray += 1) {
-      const angle = ray / 12 * TAU + 0.13
-      const inner = 35 + ring * 90
-      const outer = inner + (1 - ring) * (65 + ray % 3 * 30)
-      context.strokeStyle = `rgba(${ray % 3 ? '102, 232, 255' : rgb}, ${0.7 * (1 - ring)})`
-      context.lineWidth = 3
+
+    context.strokeStyle = `rgba(${secondary}, ${0.72 * (1 - ring)})`
+    context.lineWidth = 9 * (1 - ring) + 1
+    context.beginPath()
+    context.arc(origin.x, origin.y, 22 + ring * 350, 0, TAU)
+    context.stroke()
+    context.save()
+    context.translate(870, 560)
+    context.scale(1, 0.25)
+    context.strokeStyle = `rgba(${rgb}, ${0.74 * (1 - ring)})`
+    context.lineWidth = 12 * (1 - ring) + 1
+    context.beginPath()
+    context.arc(0, 0, 35 + ring * 470, 0, TAU)
+    context.stroke()
+    context.restore()
+
+    for (let ray = 0; ray < 18; ray += 1) {
+      const angle = ray / 18 * TAU + 0.13
+      const inner = 30 + ring * 105
+      const outer = inner + (1 - ring) * (85 + ray % 4 * 34)
+      context.strokeStyle = `rgba(${ray % 3 ? secondary : rgb}, ${0.72 * (1 - ring)})`
+      context.lineWidth = 2 + ray % 3
       context.beginPath()
       context.moveTo(origin.x + Math.cos(angle) * inner, origin.y + Math.sin(angle) * inner)
       context.lineTo(origin.x + Math.cos(angle) * outer, origin.y + Math.sin(angle) * outer)
       context.stroke()
     }
+    for (let spark = 0; spark < 28; spark += 1) {
+      const angle = spark * 2.399 + 0.4
+      const speed = 80 + spark % 7 * 35
+      const travel = easeOut(segment(elapsed, 0, 1.05))
+      const x = origin.x + Math.cos(angle) * speed * travel
+      const y = origin.y + Math.sin(angle) * speed * travel + 90 * elapsed * elapsed
+      const alpha = fade * (0.35 + spark % 4 * 0.13)
+      context.fillStyle = `rgba(${spark % 3 ? secondary : rgb}, ${alpha})`
+      context.beginPath()
+      context.arc(x, y, 1.4 + spark % 3, 0, TAU)
+      context.fill()
+    }
     context.restore()
+
+    for (let cloud = 0; cloud < 7; cloud += 1) {
+      const localTime = Math.max(0, elapsed - cloud * 0.025)
+      if (localTime <= 0 || localTime > 1.35) continue
+      const direction = cloud % 2 ? -1 : 1
+      const x = 870 + direction * (25 + cloud * 17) * easeOut(segment(localTime, 0, 1.1))
+      const y = 558 - localTime * (25 + cloud * 5)
+      const radius = 28 + localTime * 58
+      const dust = context.createRadialGradient(x, y, 0, x, y, radius)
+      dust.addColorStop(0, `rgba(110, 125, 143, ${0.16 * (1 - localTime / 1.35)})`)
+      dust.addColorStop(1, 'rgba(65, 79, 99, 0)')
+      context.fillStyle = dust
+      context.beginPath()
+      context.arc(x, y, radius, 0, TAU)
+      context.fill()
+    }
+
     this.debris.forEach((piece, index) => {
       const localTime = Math.max(0, elapsed - index % 4 * 0.012)
-      if (localTime <= 0 || localTime > 1.4) return
+      if (localTime <= 0 || localTime > 1.45) return
       const x = origin.x + Math.cos(piece.angle) * piece.speed * localTime
-      const y = origin.y + Math.sin(piece.angle) * piece.speed * localTime + 260 * localTime * localTime - piece.lift * localTime
+      const y = origin.y + Math.sin(piece.angle) * piece.speed * localTime + 310 * localTime * localTime - piece.lift * localTime
       context.save()
       context.translate(x, y)
       context.rotate(piece.spin * localTime + ambient * 0.2)
-      context.globalAlpha = 1 - segment(localTime, 0.85, 1.4)
-      polygon(context, [{ x: -piece.size, y: -piece.size * 0.4 }, { x: piece.size * 0.7, y: -piece.size * 0.7 }, { x: piece.size, y: piece.size * 0.5 }, { x: -piece.size * 0.5, y: piece.size }], index % 4 === 0 ? '#7de9f4' : '#344b61', '#8ca5af', 1)
+      context.globalAlpha = 1 - segment(localTime, 0.9, 1.45)
+      polygon(context, [{ x: -piece.size, y: -piece.size * 0.4 }, { x: piece.size * 0.7, y: -piece.size * 0.7 }, { x: piece.size, y: piece.size * 0.5 }, { x: -piece.size * 0.5, y: piece.size }], index % 4 === 0 ? '#8defff' : '#35485e', '#9db4c1', 1)
       context.restore()
     })
   }
@@ -919,11 +973,11 @@ export class ZenithRenderer {
     if (time < 4.5 || time > 4.9) return
     const context = this.context
     const elapsed = time - 4.5
-    const flash = Math.max(0, 1 - elapsed / 0.12) * 0.72
+    const flash = Math.max(0, 1 - elapsed / 0.09) * 0.48
     if (flash > 0) {
-      const gradient = context.createRadialGradient(900, 425, 10, 900, 425, 650)
-      gradient.addColorStop(0, `rgba(235, 255, 255, ${flash})`)
-      gradient.addColorStop(0.3, hero === 'kaelis' ? `rgba(255, 195, 93, ${flash * 0.45})` : `rgba(170, 121, 255, ${flash * 0.45})`)
+      const gradient = context.createRadialGradient(IMPACT_POINT.x, IMPACT_POINT.y, 8, IMPACT_POINT.x, IMPACT_POINT.y, 540)
+      gradient.addColorStop(0, `rgba(255, 255, 255, ${flash})`)
+      gradient.addColorStop(0.24, hero === 'kaelis' ? `rgba(255, 190, 78, ${flash * 0.42})` : `rgba(170, 121, 255, ${flash * 0.42})`)
       gradient.addColorStop(1, 'rgba(32, 98, 192, 0)')
       context.fillStyle = gradient
       context.fillRect(0, 0, 1280, 720)
@@ -1043,21 +1097,21 @@ export function mapShortTime(time: number) {
 
 const SHOTS: Record<HeroId, Array<{ at: number; name: string; detail: string }>> = {
   kaelis: [
-    { at: 0, name: 'La lame du serment', detail: 'Anticipation · l’épée retient la lumière' },
-    { at: 0.55, name: 'L’étincelle de l’aube', detail: 'Gros plan · le regard et la lame s’embrasent' },
-    { at: 1.35, name: 'La charge solaire', detail: 'Traveling · course, foulées et envol' },
-    { at: 2.35, name: 'Les ailes du phénix', detail: 'Caméra orbitale · rotation et cape animée' },
-    { at: 3.45, name: 'Aube incarnée', detail: 'Caméra poursuite · entaille descendante' },
-    { at: 4.5, name: 'Impact solaire', detail: 'Impact · réaction du golem et dégâts' },
-    { at: 5.65, name: 'Après l’incandescence', detail: 'Réception · récupération et retour au combat' },
+    { at: 0, name: 'Le dragon du Zénith', detail: 'Plan d’ensemble · le dragon respire et Kaelis prend appui' },
+    { at: 0.55, name: 'Le serment de l’aube', detail: 'Gros plan · le regard, la lame et les braises' },
+    { at: 1.35, name: 'La charge solaire', detail: 'Traveling · appuis stables, cape et envol' },
+    { at: 2.35, name: 'Les ailes du phénix', detail: 'Caméra orbitale · déploiement et rotation complète' },
+    { at: 3.45, name: 'La chute incandescente', detail: 'Caméra poursuite · dragon en garde et entaille' },
+    { at: 4.5, name: 'Le ciel se fend', detail: 'Impact unique · cratère et rugissement du dragon' },
+    { at: 5.65, name: 'Après l’incandescence', detail: 'Réception · ailes repliées et retour au combat' },
   ],
   nyxara: [
-    { at: 0, name: 'L’oracle ouvre les yeux', detail: 'Anticipation · la première constellation' },
+    { at: 0, name: 'L’oracle et le dragon', detail: 'Plan d’ensemble · la première constellation' },
     { at: 0.55, name: 'La carte céleste', detail: 'Gros plan · regard et bâton astral' },
     { at: 1.35, name: 'L’ascension de Nyxara', detail: 'Lévitation · cheveux, robe et incantation' },
-    { at: 2.35, name: 'Le serpent astral', detail: 'Caméra orbitale · constellation vivante' },
-    { at: 3.45, name: 'Requiem des Constellations', detail: 'Incantation · plongée du serpent astral' },
-    { at: 4.5, name: 'Effondrement astral', detail: 'Impact · marque, réaction et dégâts' },
+    { at: 2.35, name: 'Le dragon astral', detail: 'Caméra orbitale · la créature cosmique se déploie' },
+    { at: 3.45, name: 'Requiem des Constellations', detail: 'Caméra poursuite · plongée du dragon astral' },
+    { at: 4.5, name: 'Collision astrale', detail: 'Impact unique · marque, cratère et rugissement' },
     { at: 5.65, name: 'Silence cosmique', detail: 'Descente · récupération et retour au combat' },
   ],
 }

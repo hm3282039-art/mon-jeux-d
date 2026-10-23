@@ -8,6 +8,7 @@ export type UltimateSound =
   | 'aerial'
   | 'dive'
   | 'impact'
+  | 'roar'
   | 'land'
   | 'recover'
   | 'return'
@@ -108,6 +109,11 @@ export class ZenithAudio {
         ;[1240, 1860, 2480].forEach((frequency, index) => {
           this.tone(frequency, 0.4, 'sine', 0.045, frequency * 0.55, index * 0.012)
         })
+        break
+      case 'roar':
+        this.tone(96, 0.82, 'sawtooth', 0.12, 43)
+        this.tone(143, 0.64, 'square', 0.045, 61, 0.035)
+        this.noise(0.72, 620, 0.12, 145)
         break
       case 'land':
         this.noise(0.2, 420, 0.16, 120)
