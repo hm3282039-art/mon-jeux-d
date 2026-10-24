@@ -1,0 +1,38 @@
+{
+  "id": "pack-starter",
+  "name": "Pack Découverte",
+  "version": "1.0.0",
+  "author": "fourni",
+  "description": "Exemple de mod fourni : ajoute 3 héros, une faction d'ennemis et rend le gacha plus généreux.",
+  "heroes": [
+    {
+      "id": "nebula", "name": "Nebula", "title": "Voile d'Étoiles", "rarity": "epic", "role": "Mage", "element": "Ombre",
+      "icon": "🌌", "colors": ["#8f7ae0", "#1d1430"],
+      "base": { "hp": 760, "atk": 136, "def": 27, "spd": 1.02, "crit": 0.12, "critDmg": 1.65 },
+      "growth": { "hp": 66, "atk": 11.4, "def": 2.4 },
+      "skill": { "name": "Éclipse", "desc": "Frappe tous les ennemis et les étourdit brièvement.", "effect": "freeze_all", "power": 0.9 }
+    },
+    {
+      "id": "grimm", "name": "Grimm", "title": "Le Fossoyeur", "rarity": "epic", "role": "Combattant", "element": "Ombre",
+      "icon": "🪦", "colors": ["#6b7a8c", "#1b2027"],
+      "base": { "hp": 1080, "atk": 112, "def": 52, "spd": 1.0, "crit": 0.12, "critDmg": 1.6 },
+      "growth": { "hp": 90, "atk": 9.4, "def": 4.0 },
+      "skill": { "name": "Coup de pelle", "desc": "Frappe fort et vole de la vie.", "effect": "snipe_lifesteal", "power": 1.7 }
+    },
+    {
+      "id": "solaire", "name": "Solaire", "title": "Lame du Zénith", "rarity": "legendary", "role": "Tireur", "element": "Feu",
+      "icon": "🌞", "colors": ["#ffd166", "#7a4207"],
+      "base": { "hp": 940, "atk": 156, "def": 36, "spd": 1.2, "crit": 0.22, "critDmg": 1.8 },
+      "growth": { "hp": 78, "atk": 12.8, "def": 2.8 },
+      "skill": { "name": "Rayon zénithal", "desc": "Transperce tous les ennemis.", "effect": "cleave", "power": 1.2 }
+    }
+  ],
+  "factions": [
+    {
+      "id": "brume", "name": "Brume des Noyés", "tint": "#5b8fa8",
+      "units": ["automate", "sentinelle", "spectre", "necromant", "avatar_du_vide"]
+    }
+  ],
+  "config": { "summon": { "weights": { "rare": 58, "epic": 32, "legendary": 10 } } },
+  "code": "api.game.state.gems += 300;\napi.toast('Pack Découverte : +300 gemmes offertes', 'success');"
+}
