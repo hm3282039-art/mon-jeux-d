@@ -133,6 +133,7 @@ export function heroStats(def, inst, g = { atk: 1, hp: 1 }) {
   return {
     id: def.id, name: def.name, title: def.title ?? '', role: def.role, element: def.element,
     rarity: def.rarity, icon: def.icon, colors: def.colors, level: inst.level, stars,
+    art: def.art ?? `assets/heroes/${def.id}.jpg`,
     hp: Math.round(hp), maxHp: Math.round(hp), atk: Math.round(atk), def: Math.round(dv),
     spd: def.base.spd, crit: def.base.crit, critDmg: def.base.critDmg, skill: def.skill,
     power: Math.round(atk * 3 + hp * 0.35 + dv * 2.2 + def.base.spd * 40),
@@ -172,18 +173,29 @@ export function makeEnemyTeam(stage, rng = Math.random) {
     if (isBoss && i === 0) def = tanks[tanks.length - 1] ?? roster[0];
     else if (i < 2) def = (tanks.length ? tanks : roster)[Math.floor(rng() * (tanks.length || roster.length))];
     else def = (others.length ? others : roster)[Math.floor(rng() * (others.length || roster.length))];
-    units.push(enemyUnit(def, stage, hpMul, atkMul, defMul, isBoss && i === 0, cfg));
+    units.push(enemyUnit(def, stage, hpMul, atkMul, defMul, isBoss && i === 0, cfg, faction));
   }
   return { units, faction, isBoss, stage };
 }
 
-function enemyUnit(def, stage, hpMul, atkMul, defMul, boss, cfg) {
+// illustration d'ennemi : `art` du monstre, sinon illustration d'archétype de sa faction
+function enemyArt(def, faction, boss) {
+  if (def.art) return def.art;
+  const group = boss ? 'boss'
+    : def.role === 'Tank' || def.role === 'Combattant' ? 'melee'
+    : def.role === 'Soigneur' || def.role === 'Mage' ? 'caster'
+    : 'ranged';
+  return faction?.id ? `assets/enemies/${faction.id}_${group}.jpg` : null;
+}
+
+function enemyUnit(def, stage, hpMul, atkMul, defMul, boss, cfg, faction) {
   const lv = Math.max(0, stage - 1);
   const gr = def.growth ?? { hp: 0, atk: 0, def: 0 };
   const hp = (def.base.hp + gr.hp * lv) * hpMul * (boss ? cfg.bossHp ?? 2.4 : 1);
   return {
     id: def.id, name: boss ? `${def.name} — ÉLITE` : def.name, role: def.role, element: def.element ?? 'Neutre',
     icon: def.icon, colors: def.colors, isBoss: boss,
+    art: enemyArt(def, faction, boss),
     hp: Math.round(hp), maxHp: Math.round(hp),
     atk: Math.round((def.base.atk + gr.atk * lv) * atkMul * (boss ? cfg.bossAtk ?? 1.35 : 1)),
     def: Math.round((def.base.def + gr.def * lv) * defMul * (boss ? cfg.bossDef ?? 1.2 : 1)),
@@ -274,6 +286,7 @@ export class Battle {
       uid: UID++, side, index, id: spec.id, name: spec.name, role: spec.role ?? 'Combattant',
       element: spec.element ?? 'Neutre', rarity: spec.rarity ?? 'rare', icon: spec.icon ?? '❔',
       colors: spec.colors ?? ['#888', '#222'], level: spec.level ?? 1, stars: spec.stars ?? 1,
+      art: spec.art ?? null, title: spec.title ?? '',
       hp: spec.hp, maxHp: spec.maxHp ?? spec.hp, atk: spec.atk, def: spec.def,
       spd: spec.spd ?? 1, crit: spec.crit ?? 0.05, critDmg: spec.critDmg ?? 1.5,
       skill: spec.skill ?? null, energy: side === 'ally' ? 20 : 0, atb: rnd() * 0.35,

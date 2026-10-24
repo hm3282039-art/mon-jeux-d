@@ -32,10 +32,15 @@ export function createApp({ game, hooks, ui, mods, api }) {
     const enemyRow = h('div', { className: 'team enemy' });
     const allyRow = h('div', { className: 'team ally' });
     const fx = h('div', { className: 'fx' });
+    const cutinBox = h('div', { className: 'cutin-box' });
     const timer = h('span', { className: 'timer' });
     const overlay = h('div', { className: 'overlay' });
     const synergy = h('div', { className: 'synergy' });
     const logBox = h('div', { className: 'log' });
+    const factionTag = h('span', { className: 'faction-tag' });
+    const waveTag = h('span', { className: 'wave-tag' });
+
+    const arena = h('div', { className: 'arena' });
 
     const head = h('div', { className: 'battle-head' }, [
       h('button', { className: 'icon-btn', text: '◀', onClick: () => game.goBack() }),
@@ -62,43 +67,71 @@ export function createApp({ game, hooks, ui, mods, api }) {
     const controls = h('div', { className: 'battle-controls' }, [
       h('button', { className: 'btn', text: '⚡ Passer', onClick: () => { if (game.battle) game.battle.finish('timeout'); } }),
       h('button', { className: 'btn', text: '⏭ +5 étapes', onClick: () => game.setStage(game.state.stage + 5) }),
-      h('button', { className: 'btn', text: '🦸 Héros', onClick: () => goTo('heroes') }),
+      h('button', { className: 'btn', text: '🦸 Équipe', onClick: () => goTo('heroes') }),
     ]);
 
-    const screen = h('section', { className: 'screen' }, [
-      head,
-      h('div', { className: 'arena' }, [
-        h('div', { className: 'arena-bg' }),
-        enemyRow,
-        h('div', { className: 'vs' }, [h('div', { className: 'line' }), timer, h('div', { className: 'line' })]),
-        allyRow,
-        fx,
-        overlay,
-      ]),
-      controls,
-      logBox,
-    ]);
+    arena.append(
+      h('div', { className: 'arena-sky' }),
+      h('div', { className: 'arena-rays' }),
+      h('div', { className: 'arena-floor' }),
+      h('div', { className: 'arena-fog' }),
+      h('div', { className: 'arena-top' }, [factionTag, waveTag]),
+      enemyRow,
+      h('div', { className: 'vs' }, [h('div', { className: 'line' }), timer, h('div', { className: 'line' })]),
+      allyRow,
+      fx,
+      cutinBox,
+      overlay,
+    );
 
+    const screen = h('section', { className: 'screen' }, [head, arena, controls, logBox]);
+
+    // ---------------------------------------------------------- carte unité
     function card(u) {
       const e = el(u.element);
-      const node = h('div', { className: `unit ${u.side} rar-${u.rarity} ${u.isBoss ? 'boss' : ''}` }, [
-        h('div', {
-          className: 'avatar',
-          style: { background: `radial-gradient(circle at 30% 20%, ${u.colors?.[0] ?? '#888'}, ${u.colors?.[1] ?? '#111'})` },
-          onClick: () => { if (u.side === 'ally' && game.battle) game.battle.castNow(u); },
-        }, [
-          h('span', { className: 'glyph', text: u.icon }),
-          h('span', { className: 'el', text: e.icon }),
-          u.isBoss ? h('span', { className: 'crown', text: '👑' }) : null,
-          h('span', { className: 'lv', text: u.level }),
-          h('div', { className: 'energy' }),
+      const portrait = h('div', { className: 'portrait' });
+      if (u.art) {
+        portrait.classList.add('has-art');
+        portrait.append(h('img', {
+          className: 'art', src: u.art, alt: u.name, draggable: false,
+          onError: (ev) => { ev.target.remove(); portrait.classList.remove('has-art'); },
+        }));
+      }
+      for (const node of [
+        h('span', { className: 'glyph', text: u.icon }),
+        h('div', { className: 'aura' }),
+        h('div', { className: 'hurt' }),
+        h('span', { className: 'el', text: e.icon }),
+        u.isBoss ? h('span', { className: 'crown', text: '👑' }) : null,
+        h('span', { className: 'lv', text: u.level }),
+        h('div', { className: 'energy' }),
+        h('span', { className: 'sx' }),
+      ]) if (node) portrait.append(node);
+
+      const node = h('div', {
+        className: `unit ${u.side} rar-${u.rarity ?? 'rare'} ${u.isBoss ? 'boss' : ''}`,
+      }, [
+        h('div', { className: 'portrait-wrap' }, [
+          h('div', { className: 'shadow' }),
+          portrait,
         ]),
-        h('div', { className: 'uname', text: u.name }),
+        h('div', { className: 'uname', text: u.isBoss ? u.name.replace(' — ÉLITE', '') : u.name }),
         h('div', { className: 'bar hp' }, [h('div', { className: 'bar-fill' })]),
         h('div', { className: 'status' }),
       ]);
+
+      node.style.setProperty('--el', e.color);
+      node.style.setProperty('--c1', u.colors?.[0] ?? '#888');
+      node.style.setProperty('--c2', u.colors?.[1] ?? '#111');
+
+      portrait.addEventListener('click', () => {
+        if (u.side !== 'ally' || !game.battle) return;
+        if (u.energy < 100 || !u.alive) return;
+        game.battle.castNow(u);
+      });
+
       const refs = {
-        u, node,
+        u, node, portrait,
         hp: node.querySelector('.bar.hp .bar-fill'),
         energy: node.querySelector('.energy'),
         status: node.querySelector('.status'),
@@ -114,6 +147,12 @@ export function createApp({ game, hooks, ui, mods, api }) {
       allyRow.innerHTML = '';
       const b = game.battle;
       if (!b) { enemyRow.append(h('div', { className: 'empty', text: 'Préparation…' })); return; }
+      if (b.faction) {
+        arena.style.setProperty('--tint', b.faction.tint ?? '#6a5cff');
+        factionTag.textContent = b.faction.name;
+        factionTag.style.borderColor = b.faction.tint ?? '';
+      }
+      waveTag.textContent = b.stage % 5 === 0 ? `☠ BOSS · Étape ${b.stage}` : `Étape ${b.stage}`;
       b.team('enemy').forEach((u) => enemyRow.append(card(u)));
       b.team('ally').forEach((u) => allyRow.append(card(u)));
       sync();
@@ -149,6 +188,42 @@ export function createApp({ game, hooks, ui, mods, api }) {
       }
     }
 
+    // ---------------------------------------------------------- effets
+    let lastCut = 0;
+    function bump(u, dir) {
+      const r = cards.get(u?.uid);
+      if (!r) return;
+      r.node.classList.remove('lunge-up', 'lunge-down');
+      void r.node.offsetWidth;
+      r.node.classList.add(dir === 'up' ? 'lunge-up' : 'lunge-down');
+      setTimeout(() => r.node.classList.remove('lunge-up', 'lunge-down'), 340);
+    }
+    function shake(power = 1) {
+      arena.classList.remove('shake');
+      void arena.offsetWidth;
+      arena.style.setProperty('--shake', String(power));
+      arena.classList.add('shake');
+      setTimeout(() => arena.classList.remove('shake'), 260);
+    }
+    function cutIn(unit) {
+      const now = performance.now();
+      if (!unit?.art || now - lastCut < 650) return;
+      lastCut = now;
+      const node = h('div', { className: `cutin ${unit.side ?? 'ally'}` }, [
+        h('img', { className: 'cutin-art', src: unit.art, alt: '' }),
+        h('div', { className: 'cutin-veil' }),
+        h('div', { className: 'cutin-txt' }, [
+          h('span', { className: 'cutin-who', text: unit.name }),
+          h('b', { className: 'cutin-skill', text: unit.skill?.name ?? 'ULTIME' }),
+        ]),
+      ]);
+      cutinBox.append(node);
+      arena.style.setProperty('--flash', el(unit.element).color);
+      arena.classList.add('flash');
+      setTimeout(() => arena.classList.remove('flash'), 400);
+      setTimeout(() => node.remove(), 1000);
+    }
+
     function showResult(r) {
       overlay.innerHTML = '';
       if (!r) return;
@@ -157,7 +232,7 @@ export function createApp({ game, hooks, ui, mods, api }) {
       overlay.append(h('div', { className: `result ${win ? 'win' : 'lose'}` }, [
         h('div', { className: 'emoji', text: win ? '🏆' : r.result === 'timeout' ? '⌛' : '💀' }),
         h('h2', { text: win ? 'VICTOIRE' : r.result === 'timeout' ? 'TEMPS ÉCOULÉ' : 'DÉFAITE' }),
-        h('p', { className: 'muted', text: win ? `Étape ${r.stage} · ${fmtTime(r.duration)}` : 'Trop faible : monte tes héros' }),
+        h('p', { className: 'muted small', text: win ? `Étape ${r.stage} · ${fmtTime(r.duration)}` : 'Trop faible : monte tes héros' }),
         h('div', { className: 'rewards' }, [
           h('span', { text: `🪙 +${fmt(rw.gold)}` }),
           h('span', { text: `💎 +${rw.gems}` }),
@@ -170,26 +245,53 @@ export function createApp({ game, hooks, ui, mods, api }) {
       ]));
     }
 
-    hooks.on('battle:start', () => { overlay.innerHTML = ''; if (current === 'battle') paint(); });
+    hooks.on('battle:start', () => { overlay.innerHTML = ''; cutinBox.innerHTML = ''; if (current === 'battle') paint(); });
+    hooks.on('attack', ({ unit }) => {
+      if (current !== 'battle' || !unit) return;
+      bump(unit, unit.side === 'ally' ? 'up' : 'down');
+    });
     hooks.on('damage', ({ target, amount, crit, affinity }) => {
       if (current !== 'battle') return;
       const r = cards.get(target.uid);
       if (!r) return;
       const cls = crit ? 'crit' : affinity > 0 ? 'super' : affinity < 0 ? 'weak' : '';
-      ui.float(fx, r.node, `-${fmt(amount)}`, cls);
+      ui.float(fx, r.portrait, `-${fmt(amount)}${crit ? ' !' : ''}`, cls);
       r.node.classList.remove('hit');
       void r.node.offsetWidth;
       r.node.classList.add('hit');
+      if (crit) shake(1.6);
+      else if (target.isBoss) shake(1);
     });
     hooks.on('heal', ({ target, amount }) => {
       if (current !== 'battle') return;
       const r = cards.get(target.uid);
-      if (r) ui.float(fx, r.node, `+${fmt(amount)}`, 'heal');
+      if (r) ui.float(fx, r.portrait, `+${fmt(amount)}`, 'heal');
+    });
+    hooks.on('shield', ({ unit }) => {
+      if (current !== 'battle') return;
+      const r = cards.get(unit?.uid);
+      if (r) ui.float(fx, r.portrait, 'BOUCLIER', 'shielded');
+    });
+    hooks.on('stun', ({ unit }) => {
+      if (current !== 'battle') return;
+      const r = cards.get(unit?.uid);
+      if (r) ui.float(fx, r.portrait, 'ÉTOURDI', 'status');
+    });
+    hooks.on('death', ({ unit }) => {
+      if (current !== 'battle') return;
+      const r = cards.get(unit?.uid);
+      if (r) {
+        r.node.classList.add('dying');
+        setTimeout(() => r.node.classList.remove('dying'), 600);
+      }
     });
     hooks.on('skill:cast', ({ unit }) => {
       if (current !== 'battle') return;
-      const r = cards.get(unit.uid);
-      if (r) { r.node.classList.add('casting'); setTimeout(() => r.node.classList.remove('casting'), 500); }
+      const r = cards.get(unit?.uid);
+      if (!r) return;
+      r.node.classList.add('casting');
+      setTimeout(() => r.node.classList.remove('casting'), 560);
+      if (unit.side === 'ally') cutIn(unit);
     });
     hooks.on('log', (e) => {
       if (current !== 'battle') return;
@@ -228,7 +330,10 @@ export function createApp({ game, hooks, ui, mods, api }) {
         const s = id ? game.stats(id) : null;
         if (!s) { teamRow.append(h('div', { className: 'slot empty', text: '+' })); continue; }
         teamRow.append(h('button', { className: `slot rar-${s.rarity}`, onClick: () => detail(id) }, [
-          h('span', { className: 'slot-av', style: { background: `radial-gradient(circle at 30% 20%, ${s.colors[0]}, ${s.colors[1]})` }, text: s.icon }),
+          h('span', { className: 'slot-av', style: { background: `radial-gradient(circle at 30% 20%, ${s.colors[0]}, ${s.colors[1]})` } }, [
+            s.art ? h('img', { className: 'slot-img', src: s.art, alt: '', onError: (ev) => ev.target.remove() }) : null,
+            h('span', { className: 'slot-glyph', text: s.icon }),
+          ]),
           h('span', { className: 'slot-n', text: s.name }),
           h('span', { className: 'slot-l', text: `Lv ${s.level}` }),
         ]));
@@ -267,15 +372,25 @@ export function createApp({ game, hooks, ui, mods, api }) {
 
     function heroCard(s) {
       const inTeam = game.state.team.includes(s.id);
+      const art = h('div', {
+        className: `hart ${s.art ? 'has-art' : ''}`,
+        style: { background: `radial-gradient(circle at 30% 15%, ${s.colors[0]}, ${s.colors[1]})` },
+      }, [
+        s.art ? h('img', {
+          className: 'hart-img', src: s.art, alt: s.name, loading: 'lazy', draggable: false,
+          onError: (ev) => { ev.target.remove(); art.classList.remove('has-art'); },
+        }) : null,
+        h('span', { className: 'hglyph', text: s.icon }),
+        h('span', { className: 'hshine' }),
+        h('span', { className: 'hel', text: el(s.element).icon }),
+        inTeam ? h('span', { className: 'hbadge', text: 'ÉQUIPE' }) : null,
+        h('span', { className: 'hstars', text: '★'.repeat(s.stars) }),
+      ]);
       return h('button', { className: `hcard rar-${s.rarity}`, onClick: () => detail(s.id) }, [
-        h('div', { className: 'hart', style: { background: `radial-gradient(circle at 30% 15%, ${s.colors[0]}, ${s.colors[1]})` } }, [
-          h('span', { className: 'hglyph', text: s.icon }),
-          h('span', { className: 'hel', text: el(s.element).icon }),
-          inTeam ? h('span', { className: 'hbadge', text: 'ÉQUIPE' }) : null,
-        ]),
+        art,
         h('div', { className: 'hmeta' }, [
           h('b', { text: s.name }),
-          h('span', { className: 'muted tiny', text: '★'.repeat(s.stars) }),
+          h('span', { className: 'hrole', text: `${ROLE_ICON[s.role]} ${s.role}` }),
           h('span', { className: 'hpow', text: `⚡ ${fmt(s.power)}` }),
         ]),
       ]);
@@ -294,6 +409,16 @@ export function createApp({ game, hooks, ui, mods, api }) {
         const maxed = inst.stars >= maxStars();
         body.innerHTML = '';
         body.append(
+          h('div', {
+            className: `hero-banner rar-${s.rarity} ${s.art ? 'has-art' : ''}`,
+            style: { background: `radial-gradient(circle at 30% 15%, ${s.colors[0]}, ${s.colors[1]})` },
+          }, [
+            s.art ? h('img', {
+              className: 'banner-img', src: s.art, alt: s.name, draggable: false,
+              onError: (ev) => { const b = ev.target.parentElement; ev.target.remove(); b.classList.remove('has-art'); },
+            }) : null,
+            h('div', { className: 'banner-fade' }),
+          ]),
           h('div', { className: 'dhead' }, [
             h('div', { className: `dart rar-${s.rarity}`, style: { background: `radial-gradient(circle at 30% 15%, ${s.colors[0]}, ${s.colors[1]})` }, text: s.icon }),
             h('div', { className: 'did' }, [
@@ -379,7 +504,10 @@ export function createApp({ game, hooks, ui, mods, api }) {
       const fresh = res.results.filter((r) => r.isNew).length;
       res.results.forEach((r, i) => {
         results.append(h('div', { className: `pull rar-${r.rarity} ${r.isNew ? 'new' : ''}`, style: { animationDelay: `${i * 50}ms` } }, [
-          h('div', { className: 'pull-art', style: { background: `radial-gradient(circle at 30% 20%, ${r.def.colors[0]}, ${r.def.colors[1]})` }, text: r.def.icon }),
+          h('div', { className: 'pull-art', style: { background: `radial-gradient(circle at 30% 20%, ${r.def.colors[0]}, ${r.def.colors[1]})` } }, [
+            r.def.art ? h('img', { className: 'pull-img', src: r.def.art, alt: '', onError: (ev) => ev.target.remove() }) : null,
+            h('span', { className: 'pull-glyph', text: r.def.icon }),
+          ]),
           h('b', { text: r.def.name }),
           h('span', { className: 'tagx', text: r.isNew ? 'NOUVEAU' : `+${r.shards} ✦` }),
         ]));
