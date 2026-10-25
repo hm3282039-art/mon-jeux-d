@@ -14,7 +14,13 @@ export function h(tag, attrs = {}, children = []) {
     else if (k === 'text') el.textContent = v;
     else if (k === 'html') el.innerHTML = v;
     else if (k === 'dataset') Object.assign(el.dataset, v);
-    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k === 'style' && typeof v === 'object') {
+      for (const [sk, sv] of Object.entries(v)) {
+        if (sv === null || sv === undefined) continue;
+        if (sk.startsWith('--')) el.style.setProperty(sk, sv);
+        else el.style[sk] = sv;
+      }
+    }
     else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
     else if (k === 'value') el.value = v;
     else if (['checked', 'disabled', 'selected'].includes(k)) el[k] = !!v;

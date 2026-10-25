@@ -16,8 +16,10 @@ ou `npx serve .`, ou l'extension *Live Server* de VS Code, ou GitHub Pages.
 
 ## Jouer
 
-- **Combat** : ton équipe affronte une vague, boss toutes les 5 étapes. Bouton `×1/×2/×3` pour la vitesse.
-- **Ultimes** : chaque héros remplit sa jauge (barre bleue sur son portrait). Quand elle est pleine, **touche le héros** pour lancer son ultime (ou active `AUTO`).
+- **Accueil** : héros vedette, progression du chapitre, bouton `COMBATTRE`.
+- **Campagne** : 6 chapitres de 8 étapes, un boss à l'étape 5 de chaque chapitre.
+- **Combat** : ton équipe affronte une vague sur un champ de bataille illustré. Vitesse `×1/×2/×3`, `AUTO` pour les ultimes.
+- **Ultimes** : la jauge bleue se remplit sous chaque portrait de la barre du bas. Elle brille quand l'ultime est prêt : **touche le portrait** (ou active `AUTO`).
 - **Héros** : niveaux à l'or, étoiles avec des fragments (doublons du gacha).
 - **Invoquer** : 1 ou 10 tirages, pity épique (10) et légendaire (60), parchemins sur les boss.
 - **Autel** : bonus permanents ATQ / PV / Or pour toute l'équipe.
@@ -105,6 +107,10 @@ api.addGlobalMultiplier("or_plus", () => ({ gold: 1.25 }));
 ```
 index.html
 css/style.css
+assets/
+  heroes/   splash arts (fiches, gacha, lobby)
+  sprites/  personnages découpés (transparence) pour le combat
+  bg/       décor d'arène
 data/      heroes.json · enemies.json · config.json
 mods/      index.json · pack-starter.json
 js/
@@ -112,6 +118,6 @@ js/
   game.js    état, sauvegarde, économie, gacha, boucle
   mods.js    chargeur de mods + API
   ui.js      helpers DOM
-  views.js   écrans (combat, héros, invocation, autel, mods)
+  views.js   écrans (accueil, campagne, combat, héros, invocation, autel, mods)
   main.js    démarrage
 ```

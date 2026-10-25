@@ -26,30 +26,182 @@ export function createApp({ game, hooks, ui, mods, api }) {
     stageTag.textContent = `Étape ${game.state.stage}`;
   }
 
+  // ------------------------------------------------------------- accueil
+  function buildLobby() {
+    const showcase = h('div', { className: 'showcase' });
+    const progress = h('div', { className: 'lobby-progress' });
+    const actions = h('div', { className: 'lobby-grid' });
+    const bottom = h('div', { className: 'lobby-bottom' });
+    const screen = h('section', { className: 'screen lobby' }, [showcase, progress, actions, bottom]);
+
+    const chapterOf = (stage) => {
+      const i = Math.floor((stage - 1) / 8) % Math.max(1, DB.factions.length);
+      return DB.factions[i] ?? { name: 'Campagne', tint: '#6a5cff' };
+    };
+
+    function paint() {
+      const team = game.state.team.map((id) => game.stats(id)).filter(Boolean).sort((a, b) => b.power - a.power);
+      const star = team[0];
+      showcase.innerHTML = '';
+      if (star) {
+        showcase.style.setProperty('--r', RARITY[star.rarity]?.color ?? '#888');
+        showcase.append(
+          h('img', { className: 'showcase-art', src: star.art, alt: star.name, onError: (e) => e.target.remove() }),
+          h('div', { className: 'showcase-shade' }),
+          h('div', { className: 'showcase-info' }, [
+            h('span', { className: 'sc-tag', text: RARITY[star.rarity]?.label ?? '' }),
+            h('h2', { className: 'sc-name', text: star.name }),
+            h('p', { className: 'sc-title', text: star.title }),
+            h('div', { className: 'sc-stats' }, [
+              h('span', { text: `⚡ ${fmt(game.teamPower())}` }),
+              h('span', { text: `👥 ${team.length}/5` }),
+            ]),
+          ]),
+          h('div', { className: 'showcase-team' }, team.map((t) => h('button', {
+            className: `mini rar-${t.rarity}`,
+            title: t.name,
+            onClick: () => { goTo('heroes'); },
+          }, [
+            h('img', { src: t.art, alt: '', onError: (e) => { e.target.replaceWith(document.createTextNode(t.icon)); } }),
+            h('span', { text: t.level }),
+          ]))),
+        );
+      }
+
+      const stage = game.state.stage;
+      const ch = chapterOf(stage);
+      const idx = ((stage - 1) % 8) + 1;
+      progress.innerHTML = '';
+      progress.style.setProperty('--tint', ch.tint ?? '#6a5cff');
+      progress.append(
+        h('div', { className: 'lp-head' }, [
+          h('div', { className: 'lp-ch' }, [
+            h('span', { className: 'lp-kicker', text: `CHAPITRE ${Math.floor((stage - 1) / 8) + 1}` }),
+            h('b', { text: ch.name }),
+          ]),
+          h('span', { className: 'pill', text: `Étape ${stage}` }),
+        ]),
+        h('div', { className: 'bar chap' }, [h('div', { className: 'bar-fill', style: { width: `${(idx / 8) * 100}%` } })]),
+        h('button', {
+          className: 'btn primary cta',
+          onClick: () => { game.startBattle(); goTo('battle'); },
+        }, [
+          h('span', { className: 'cta-ico', text: '⚔️' }),
+          h('span', { className: 'cta-txt' }, [
+            h('b', { text: stage % 5 === 0 ? 'AFFRONTER LE BOSS' : "COMBATTRE" }),
+            h('span', { text: `Étape ${stage} · ${ch.name}` }),
+          ]),
+          h('span', { className: 'cta-ar', text: '›' }),
+        ]),
+      );
+
+      actions.innerHTML = '';
+      for (const a of [
+        { icon: '🗺️', label: 'Campagne', sub: `Étape ${game.state.stats.best}`, go: 'campaign' },
+        { icon: '🦸', label: 'Héros', sub: `${game.owned().length}/${DB.heroes.size}`, go: 'heroes' },
+        { icon: '🔮', label: 'Invoquer', sub: `${game.state.tickets} 🎟️`, go: 'summon' },
+        { icon: '🕯️', label: 'Autel', sub: `Nv ${(game.state.autel.atk ?? 0) + (game.state.autel.hp ?? 0) + (game.state.autel.gold ?? 0)}`, go: 'autel' },
+        { icon: '🧩', label: 'Mods', sub: `${game.state.mods.enabled.length} actif(s)`, go: 'mods' },
+        { icon: '💾', label: 'Sauvegarde', sub: 'exporter', on: () => game.exportSave() },
+      ]) {
+        actions.append(h('button', {
+          className: 'lobby-tile',
+          onClick: () => (a.on ? a.on() : goTo(a.go)),
+        }, [
+          h('span', { className: 'lt-ico', text: a.icon }),
+          h('span', { className: 'lt-body' }, [h('b', { text: a.label }), h('span', { text: a.sub })]),
+        ]));
+      }
+
+      bottom.innerHTML = '';
+      bottom.append(h('div', { className: 'lobby-note' }, [
+        h('b', { text: '0 € · 0 énergie · 0 attente' }),
+        h('p', { className: 'muted tiny', text: 'Tu joues autant que tu veux. Tu bloques ? Tu farmes, tu montes, tu repasses.' }),
+      ]));
+    }
+
+    return {
+      id: 'lobby', label: 'Accueil', icon: '🏰', el: screen,
+      onShow: paint, update() {},
+    };
+  }
+
+  // ------------------------------------------------------------- campagne
+  function buildCampaign() {
+    const list = h('div', { className: 'chapters' });
+    const head = h('div', { className: 'sect-head' }, [
+      h('h1', { text: 'Campagne' }),
+      h('span', { className: 'pill', text: `Record : étape ${game.state.stats.best}` }),
+    ]);
+    const screen = h('section', { className: 'screen' }, [head, list]);
+
+    function paint() {
+      list.innerHTML = '';
+      DB.factions.forEach((f, ci) => {
+        const from = ci * 8 + 1;
+        const to = from + 7;
+        const cleared = Math.max(0, Math.min(8, game.state.stats.best - (from - 1)));
+        const nodes = h('div', { className: 'nodes' });
+        for (let n = from; n <= to; n++) {
+          const isBoss = n % 5 === 0;
+          const done = n <= game.state.stats.best;
+          const current = n === game.state.stage;
+          const locked = n > game.state.stats.best + 1;
+          nodes.append(h('button', {
+            className: `node ${done ? 'done' : ''} ${current ? 'current' : ''} ${locked ? 'locked' : ''} ${isBoss ? 'boss' : ''}`,
+            disabled: locked,
+            onClick: () => {
+              if (locked) return ui.toast('Termine d’abord l’étape précédente', 'warn');
+              closeChapter();
+              game.setStage(n);
+              goTo('battle');
+            },
+          }, [
+            h('span', { className: 'node-ico', text: locked ? '🔒' : isBoss ? '☠️' : done ? '✓' : '⚔️' }),
+            h('span', { className: 'node-n', text: n }),
+          ]));
+        }
+        const card = h('div', {
+          className: 'chapter',
+          style: { '--tint': f.tint ?? '#6a5cff' },
+        }, [
+          h('div', { className: 'chapter-hero' }, [
+            h('img', {
+              className: 'chapter-boss', src: `assets/sprites/${f.id}_boss.webp`, alt: '',
+              onError: (e) => e.target.remove(),
+            }),
+            h('div', { className: 'chapter-shade' }),
+            h('div', { className: 'chapter-id' }, [
+              h('span', { className: 'chapter-n', text: `CHAPITRE ${ci + 1}` }),
+              h('b', { text: f.name }),
+              h('span', { className: 'chapter-sub', text: `${cleared}/8 étapes · boss à l’étape ${from + 4}` }),
+            ]),
+            h('div', { className: 'chapter-prog' }, [h('i', { style: { width: `${(cleared / 8) * 100}%` } })]),
+          ]),
+          nodes,
+        ]);
+        list.append(card);
+      });
+    }
+    function closeChapter() {}
+    return { id: 'campaign', label: 'Campagne', icon: '🗺️', el: screen, onShow: paint, update() {} };
+  }
+
   // ------------------------------------------------------------- combat
   function buildBattle() {
-    const cards = new Map();
-    const enemyRow = h('div', { className: 'team enemy' });
-    const allyRow = h('div', { className: 'team ally' });
+    const actors = new Map();
+    const enemyRow = h('div', { className: 'row enemy' });
+    const allyRow = h('div', { className: 'row ally' });
     const fx = h('div', { className: 'fx' });
     const cutinBox = h('div', { className: 'cutin-box' });
-    const timer = h('span', { className: 'timer' });
     const overlay = h('div', { className: 'overlay' });
-    const synergy = h('div', { className: 'synergy' });
-    const logBox = h('div', { className: 'log' });
-    const factionTag = h('span', { className: 'faction-tag' });
-    const waveTag = h('span', { className: 'wave-tag' });
+    const ultBar = h('div', { className: 'ult-bar' });
+    const chapterLabel = h('span', { className: 'hud-chapter' });
+    const waveTag = h('span', { className: 'hud-wave' });
+    const timer = h('span', { className: 'timer' });
 
-    const arena = h('div', { className: 'arena' });
-
-    const head = h('div', { className: 'battle-head' }, [
-      h('button', { className: 'icon-btn', text: '◀', onClick: () => game.goBack() }),
-      h('div', { className: 'battle-title' }, [stageTag, synergy]),
-      h('div', { className: 'speed' }, [
-        h('button', { className: 'chip', text: '×1', onClick: (e) => cycleSpeed(e.target) }),
-        h('button', { className: 'chip', text: 'AUTO', onClick: (e) => toggleAuto(e.target) }),
-      ]),
-    ]);
+    const speedBtn = h('button', { className: 'chip sm', text: `×${game.state.settings.speed}`, onClick: () => cycleSpeed(speedBtn) });
+    const autoBtn = h('button', { className: `chip sm ${game.state.settings.autoCast ? 'on' : ''}`, text: 'AUTO', onClick: () => toggleAuto(autoBtn) });
 
     function cycleSpeed(btn) {
       const s = game.state.settings.speed;
@@ -61,114 +213,119 @@ export function createApp({ game, hooks, ui, mods, api }) {
       game.state.settings.autoCast = !game.state.settings.autoCast;
       if (game.battle) game.battle.autoCast = game.state.settings.autoCast;
       btn.classList.toggle('on', game.state.settings.autoCast);
-      ui.toast(game.state.settings.autoCast ? 'Ultimes automatiques' : 'Ultimes manuels : touche tes héros !', 'info');
+      ui.toast(game.state.settings.autoCast ? 'Ultimes automatiques' : 'Ultimes manuels : touche les portraits', 'info');
     }
 
-    const controls = h('div', { className: 'battle-controls' }, [
-      h('button', { className: 'btn', text: '⚡ Passer', onClick: () => { if (game.battle) game.battle.finish('timeout'); } }),
-      h('button', { className: 'btn', text: '⏭ +5 étapes', onClick: () => game.setStage(game.state.stage + 5) }),
-      h('button', { className: 'btn', text: '🦸 Équipe', onClick: () => goTo('heroes') }),
-    ]);
-
-    arena.append(
-      h('div', { className: 'arena-sky' }),
-      h('div', { className: 'arena-rays' }),
-      h('div', { className: 'arena-floor' }),
-      h('div', { className: 'arena-fog' }),
-      h('div', { className: 'arena-top' }, [factionTag, waveTag]),
+    const stageEl = h('div', { className: 'stage' }, [
+      h('div', { className: 'stage-bg' }),
+      h('div', { className: 'stage-fog' }),
+      h('div', { className: 'stage-vig' }),
+      h('div', { className: 'hud' }, [
+        h('button', { className: 'hud-btn', text: '‹', onClick: () => goTo('campaign') }),
+        h('div', { className: 'hud-mid' }, [chapterLabel, waveTag]),
+        h('div', { className: 'hud-right' }, [timer, speedBtn, autoBtn]),
+      ]),
       enemyRow,
-      h('div', { className: 'vs' }, [h('div', { className: 'line' }), timer, h('div', { className: 'line' })]),
       allyRow,
       fx,
       cutinBox,
       overlay,
-    );
+    ]);
 
-    const screen = h('section', { className: 'screen' }, [head, arena, controls, logBox]);
+    const controls = h('div', { className: 'battle-controls' }, [
+      h('button', { className: 'btn sm', text: '⏭ +5', onClick: () => game.setStage(game.state.stage + 5) }),
+      h('button', { className: 'btn sm', text: 'Retry', onClick: () => game.retry() }),
+      h('button', { className: 'btn sm', text: '⚡ Passer', onClick: () => { if (game.battle) game.battle.finish('timeout'); } }),
+    ]);
 
-    // ---------------------------------------------------------- carte unité
-    function card(u) {
-      const e = el(u.element);
-      const portrait = h('div', { className: 'portrait' });
-      if (u.art) {
-        portrait.classList.add('has-art');
-        portrait.append(h('img', {
-          className: 'art', src: u.art, alt: u.name, draggable: false,
-          onError: (ev) => { ev.target.remove(); portrait.classList.remove('has-art'); },
-        }));
-      }
-      for (const node of [
-        h('span', { className: 'glyph', text: u.icon }),
-        h('div', { className: 'aura' }),
-        h('div', { className: 'hurt' }),
-        h('span', { className: 'el', text: e.icon }),
-        u.isBoss ? h('span', { className: 'crown', text: '👑' }) : null,
-        h('span', { className: 'lv', text: u.level }),
-        h('div', { className: 'energy' }),
-        h('span', { className: 'sx' }),
-      ]) if (node) portrait.append(node);
+    const screen = h('section', { className: 'screen battle' }, [stageEl, ultBar, controls]);
 
-      const node = h('div', {
-        className: `unit ${u.side} rar-${u.rarity ?? 'rare'} ${u.isBoss ? 'boss' : ''}`,
-      }, [
-        h('div', { className: 'portrait-wrap' }, [
-          h('div', { className: 'shadow' }),
-          portrait,
-        ]),
-        h('div', { className: 'uname', text: u.isBoss ? u.name.replace(' — ÉLITE', '') : u.name }),
-        h('div', { className: 'bar hp' }, [h('div', { className: 'bar-fill' })]),
-        h('div', { className: 'status' }),
-      ]);
-
-      node.style.setProperty('--el', e.color);
-      node.style.setProperty('--c1', u.colors?.[0] ?? '#888');
-      node.style.setProperty('--c2', u.colors?.[1] ?? '#111');
-
-      portrait.addEventListener('click', () => {
-        if (u.side !== 'ally' || !game.battle) return;
-        if (u.energy < 100 || !u.alive) return;
-        game.battle.castNow(u);
+    // ------------------------------------------------------- acteur
+    function actorNode(u) {
+      const spr = h('img', {
+        className: 'spr', src: `assets/sprites/${u.id}.webp`, alt: u.name, draggable: false,
+        onError: (ev) => {
+          const wrap = ev.target.parentElement;
+          ev.target.remove();
+          wrap.classList.add('no-spr');
+          if (u.art) {
+            wrap.prepend(h('div', { className: 'bust' }, [
+              h('img', {
+                src: u.art, alt: u.name,
+                onError: (e2) => { e2.target.remove(); wrap.classList.add('no-img'); },
+              }),
+              h('span', { className: 'bust-glyph', text: u.icon }),
+            ]));
+          } else {
+            wrap.prepend(h('span', { className: 'token', text: u.icon }));
+          }
+        },
       });
-
+      const node = h('div', {
+        className: `actor ${u.side} ${u.isBoss ? 'boss' : ''} rar-${u.rarity ?? 'rare'}`,
+      }, [
+        h('div', { className: 'spr-wrap' }, [
+          h('div', { className: 'ground' }),
+          spr,
+          h('div', { className: 'aura' }),
+          h('div', { className: 'flash' }),
+          h('span', { className: 'crown', text: '👑' }),
+          h('div', { className: 'bar hp' }, [h('div', { className: 'bar-fill' })]),
+          h('div', { className: 'status' }),
+        ]),
+        h('div', { className: 'nm', text: u.isBoss ? u.name.replace(' — ÉLITE', '') : u.name }),
+      ]);
+      node.style.setProperty('--el', ELEMENTS[u.element]?.color ?? '#fff');
+      node.querySelector('.crown').style.display = u.isBoss ? '' : 'none';
       const refs = {
-        u, node, portrait,
+        u, node,
+        spr: spr,
         hp: node.querySelector('.bar.hp .bar-fill'),
-        energy: node.querySelector('.energy'),
         status: node.querySelector('.status'),
         key: '',
       };
-      cards.set(u.uid, refs);
+      actors.set(u.uid, refs);
       return node;
     }
 
+    function ultButton(u) {
+      const btn = h('button', { className: 'ult', onClick: () => { if (game.battle) game.battle.castNow(u); } }, [
+        h('img', { src: u.art, alt: u.name, onError: (e) => { e.target.replaceWith(h('span', { className: 'ult-glyph', text: u.icon })); } }),
+        h('i', { className: 'fill' }),
+        h('span', { className: 'ult-name', text: u.name }),
+      ]);
+      btn.dataset.uid = u.uid;
+      return btn;
+    }
+
     function paint() {
-      cards.clear();
+      actors.clear();
       enemyRow.innerHTML = '';
       allyRow.innerHTML = '';
+      ultBar.innerHTML = '';
       const b = game.battle;
-      if (!b) { enemyRow.append(h('div', { className: 'empty', text: 'Préparation…' })); return; }
-      if (b.faction) {
-        arena.style.setProperty('--tint', b.faction.tint ?? '#6a5cff');
-        factionTag.textContent = b.faction.name;
-        factionTag.style.borderColor = b.faction.tint ?? '';
-      }
-      waveTag.textContent = b.stage % 5 === 0 ? `☠ BOSS · Étape ${b.stage}` : `Étape ${b.stage}`;
-      b.team('enemy').forEach((u) => enemyRow.append(card(u)));
-      b.team('ally').forEach((u) => allyRow.append(card(u)));
+      if (!b) return;
+      const f = b.faction;
+      stageEl.style.setProperty('--tint', f?.tint ?? '#6a5cff');
+      chapterLabel.textContent = f?.name ?? 'Combat';
+      waveTag.textContent = b.stage % 5 === 0 ? `BOSS · Étape ${b.stage}` : `Étape ${b.stage}`;
+      b.team('enemy').forEach((u) => enemyRow.append(actorNode(u)));
+      b.team('ally').forEach((u) => allyRow.append(actorNode(u)));
+      b.team('ally').forEach((u) => ultBar.append(ultButton(u)));
       sync();
     }
 
     function sync() {
-      for (const r of cards.values()) {
+      const b = game.battle;
+      for (const r of actors.values()) {
         const { u } = r;
         if (!u?.maxHp) continue;
         const pct = Math.max(0, u.hp / u.maxHp);
         r.hp.style.width = `${pct * 100}%`;
         r.hp.classList.toggle('low', pct < 0.3);
         r.node.classList.toggle('dead', u.hp <= 0);
+        r.node.classList.toggle('ready', u.side === 'ally' && u.alive && u.energy >= 100);
         r.node.classList.toggle('shielded', u.shield > 0);
-        r.node.classList.toggle('ready', u.energy >= 100 && u.alive && u.side === 'ally');
-        r.energy.style.height = `${Math.min(100, u.energy)}%`;
         const key = (u.statuses ?? []).map((s) => s.id).join();
         if (key !== r.key) {
           r.key = key;
@@ -176,41 +333,85 @@ export function createApp({ game, hooks, ui, mods, api }) {
           for (const s of u.statuses ?? []) r.status.append(h('span', { className: `dot ${s.kind}`, title: s.name }));
         }
       }
-      const b = game.battle;
+      for (const btn of ultBar.children) {
+        const r = actors.get(Number(btn.dataset.uid));
+        if (!r) continue;
+        const u = r.u;
+        btn.classList.toggle('ready', u.alive && u.energy >= 100);
+        btn.classList.toggle('off', !u.alive);
+        btn.querySelector('.fill').style.height = `${Math.min(100, u.energy)}%`;
+      }
       const left = b ? Math.max(0, b.duration - b.time) : 0;
       timer.textContent = `${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}`;
-      const syn = game.synergyInfo();
-      synergy.innerHTML = '';
-      if (syn.best.count >= 2) {
-        const e = el(syn.best.element);
-        synergy.append(h('span', { className: 'syn-badge', style: { borderColor: e.color } },
-          `${e.icon} ${syn.best.element} ×${syn.best.count} +${Math.round(syn.best.bonus * 100)}%`));
+    }
+
+    // ------------------------------------------------------- effets
+    function center(node) {
+      const c = fx.getBoundingClientRect();
+      const r = node.getBoundingClientRect();
+      return { x: r.left - c.left + r.width / 2, y: r.top - c.top + r.height / 2, w: r.width, h: r.height };
+    }
+
+    function burst(node, color, scale = 1) {
+      if (!node?.isConnected) return;
+      const p = center(node);
+      const d = h('div', { className: 'vfx burst', style: {
+        left: `${p.x}px`, top: `${p.y}px`, '--c': color, '--s': String(scale),
+      } });
+      fx.append(d);
+      setTimeout(() => d.remove(), 520);
+    }
+
+    function slash(node, color) {
+      if (!node?.isConnected) return;
+      const p = center(node);
+      const d = h('div', { className: 'vfx slash', style: { left: `${p.x}px`, top: `${p.y}px`, '--c': color } });
+      fx.append(d);
+      setTimeout(() => d.remove(), 420);
+    }
+
+    function particles(node, color, n = 8) {
+      if (!node?.isConnected) return;
+      const p = center(node);
+      for (let i = 0; i < n; i++) {
+        const a = (Math.PI * 2 * i) / n + Math.random();
+        const dist = 26 + Math.random() * 26;
+        const d = h('div', { className: 'vfx spark', style: {
+          left: `${p.x}px`, top: `${p.y}px`, '--c': color,
+          '--dx': `${Math.cos(a) * dist}px`, '--dy': `${Math.sin(a) * dist}px`,
+        } });
+        fx.append(d);
+        setTimeout(() => d.remove(), 600);
       }
     }
 
-    // ---------------------------------------------------------- effets
+    function projectile(fromNode, toNode, color) {
+      if (!fromNode?.isConnected || !toNode?.isConnected) return;
+      const a = center(fromNode);
+      const b = center(toNode);
+      const d = h('div', { className: 'vfx bolt', style: { left: `${a.x}px`, top: `${a.y - 8}px`, '--c': color } });
+      fx.append(d);
+      requestAnimationFrame(() => {
+        d.style.transform = `translate(${b.x - a.x}px, ${b.y - a.y + 8}px)`;
+      });
+      setTimeout(() => { d.remove(); burst(toNode, color, 0.8); }, 240);
+    }
+
+    function hitShake(power = 1) {
+      stageEl.classList.remove('shake');
+      void stageEl.offsetWidth;
+      stageEl.style.setProperty('--shake', String(power));
+      stageEl.classList.add('shake');
+      setTimeout(() => stageEl.classList.remove('shake'), 260);
+    }
+
     let lastCut = 0;
-    function bump(u, dir) {
-      const r = cards.get(u?.uid);
-      if (!r) return;
-      r.node.classList.remove('lunge-up', 'lunge-down');
-      void r.node.offsetWidth;
-      r.node.classList.add(dir === 'up' ? 'lunge-up' : 'lunge-down');
-      setTimeout(() => r.node.classList.remove('lunge-up', 'lunge-down'), 340);
-    }
-    function shake(power = 1) {
-      arena.classList.remove('shake');
-      void arena.offsetWidth;
-      arena.style.setProperty('--shake', String(power));
-      arena.classList.add('shake');
-      setTimeout(() => arena.classList.remove('shake'), 260);
-    }
     function cutIn(unit) {
       const now = performance.now();
-      if (!unit?.art || now - lastCut < 650) return;
+      if (now - lastCut < 800) return;
       lastCut = now;
-      const node = h('div', { className: `cutin ${unit.side ?? 'ally'}` }, [
-        h('img', { className: 'cutin-art', src: unit.art, alt: '' }),
+      const node = h('div', { className: 'cutin' }, [
+        h('img', { className: 'cutin-art', src: unit.art, alt: '', onError: (e) => e.target.remove() }),
         h('div', { className: 'cutin-veil' }),
         h('div', { className: 'cutin-txt' }, [
           h('span', { className: 'cutin-who', text: unit.name }),
@@ -218,10 +419,18 @@ export function createApp({ game, hooks, ui, mods, api }) {
         ]),
       ]);
       cutinBox.append(node);
-      arena.style.setProperty('--flash', el(unit.element).color);
-      arena.classList.add('flash');
-      setTimeout(() => arena.classList.remove('flash'), 400);
+      stageEl.style.setProperty('--flash', ELEMENTS[unit.element]?.color ?? '#fff');
+      stageEl.classList.add('flash');
+      setTimeout(() => stageEl.classList.remove('flash'), 420);
       setTimeout(() => node.remove(), 1000);
+    }
+
+    function animate(node, cls, ms = 400) {
+      if (!node) return;
+      node.classList.remove(cls);
+      void node.offsetWidth;
+      node.classList.add(cls);
+      setTimeout(() => node.classList.remove(cls), ms);
     }
 
     function showResult(r) {
@@ -230,9 +439,10 @@ export function createApp({ game, hooks, ui, mods, api }) {
       const win = r.result === 'win';
       const rw = r.rewards ?? { gold: 0, gems: 0, tickets: 0 };
       overlay.append(h('div', { className: `result ${win ? 'win' : 'lose'}` }, [
+        h('div', { className: 'result-rays' }),
         h('div', { className: 'emoji', text: win ? '🏆' : r.result === 'timeout' ? '⌛' : '💀' }),
         h('h2', { text: win ? 'VICTOIRE' : r.result === 'timeout' ? 'TEMPS ÉCOULÉ' : 'DÉFAITE' }),
-        h('p', { className: 'muted small', text: win ? `Étape ${r.stage} · ${fmtTime(r.duration)}` : 'Trop faible : monte tes héros' }),
+        h('p', { className: 'muted small', text: win ? `Étape ${r.stage} · ${fmtTime(r.duration)}` : 'Monte tes héros, puis retente' }),
         h('div', { className: 'rewards' }, [
           h('span', { text: `🪙 +${fmt(rw.gold)}` }),
           h('span', { text: `💎 +${rw.gems}` }),
@@ -248,62 +458,63 @@ export function createApp({ game, hooks, ui, mods, api }) {
     hooks.on('battle:start', () => { overlay.innerHTML = ''; cutinBox.innerHTML = ''; if (current === 'battle') paint(); });
     hooks.on('attack', ({ unit }) => {
       if (current !== 'battle' || !unit) return;
-      bump(unit, unit.side === 'ally' ? 'up' : 'down');
+      const r = actors.get(unit.uid);
+      if (r) animate(r.node, 'attacking', 380);
     });
-    hooks.on('damage', ({ target, amount, crit, affinity }) => {
+    hooks.on('damage', ({ source, target, amount, crit, affinity }) => {
       if (current !== 'battle') return;
-      const r = cards.get(target.uid);
+      const r = actors.get(target.uid);
       if (!r) return;
+      const color = ELEMENTS[source?.element]?.color ?? '#fff';
       const cls = crit ? 'crit' : affinity > 0 ? 'super' : affinity < 0 ? 'weak' : '';
-      ui.float(fx, r.portrait, `-${fmt(amount)}${crit ? ' !' : ''}`, cls);
-      r.node.classList.remove('hit');
-      void r.node.offsetWidth;
-      r.node.classList.add('hit');
-      if (crit) shake(1.6);
-      else if (target.isBoss) shake(1);
+      ui.float(fx, r.node.querySelector('.spr-wrap'), `-${fmt(amount)}`, cls);
+      animate(r.node, 'hurt', 340);
+      slash(r.node.querySelector('.spr-wrap'), color);
+      particles(r.node.querySelector('.spr-wrap'), color, crit ? 10 : 5);
+      if (crit) { burst(r.node.querySelector('.spr-wrap'), color, 1.25); hitShake(1.6); }
+      else if (target.isBoss) hitShake(0.9);
+      if (source && r.u.side !== source.side) projectile(actors.get(source.uid)?.node.querySelector('.spr-wrap'), r.node.querySelector('.spr-wrap'), color);
     });
     hooks.on('heal', ({ target, amount }) => {
       if (current !== 'battle') return;
-      const r = cards.get(target.uid);
-      if (r) ui.float(fx, r.portrait, `+${fmt(amount)}`, 'heal');
+      const r = actors.get(target.uid);
+      if (!r) return;
+      ui.float(fx, r.node.querySelector('.spr-wrap'), `+${fmt(amount)}`, 'heal');
+      burst(r.node.querySelector('.spr-wrap'), '#6ee7a0', 1.1);
     });
     hooks.on('shield', ({ unit }) => {
       if (current !== 'battle') return;
-      const r = cards.get(unit?.uid);
-      if (r) ui.float(fx, r.portrait, 'BOUCLIER', 'shielded');
+      const r = actors.get(unit?.uid);
+      if (r) { burst(r.node.querySelector('.spr-wrap'), '#7bd0ff', 1); ui.float(fx, r.node.querySelector('.spr-wrap'), 'BOUCLIER', 'shielded'); }
     });
     hooks.on('stun', ({ unit }) => {
       if (current !== 'battle') return;
-      const r = cards.get(unit?.uid);
-      if (r) ui.float(fx, r.portrait, 'ÉTOURDI', 'status');
+      const r = actors.get(unit?.uid);
+      if (r) ui.float(fx, r.node.querySelector('.spr-wrap'), 'ÉTOURDI', 'status');
     });
     hooks.on('death', ({ unit }) => {
       if (current !== 'battle') return;
-      const r = cards.get(unit?.uid);
-      if (r) {
-        r.node.classList.add('dying');
-        setTimeout(() => r.node.classList.remove('dying'), 600);
-      }
+      const r = actors.get(unit?.uid);
+      if (r) { animate(r.node, 'dying', 700); burst(r.node.querySelector('.spr-wrap'), '#ff7a7a', 1.3); }
     });
     hooks.on('skill:cast', ({ unit }) => {
       if (current !== 'battle') return;
-      const r = cards.get(unit?.uid);
+      const r = actors.get(unit?.uid);
       if (!r) return;
-      r.node.classList.add('casting');
-      setTimeout(() => r.node.classList.remove('casting'), 560);
+      animate(r.node, 'casting', 620);
+      burst(r.node.querySelector('.spr-wrap'), ELEMENTS[unit.element]?.color ?? '#fff', 1.2);
       if (unit.side === 'ally') cutIn(unit);
-    });
-    hooks.on('log', (e) => {
-      if (current !== 'battle') return;
-      logBox.append(h('div', { className: `logline ${e.kind}` }, `${e.t.toFixed(1)}s · ${e.message}`));
-      while (logBox.children.length > 8) logBox.firstChild.remove();
-      logBox.scrollTop = logBox.scrollHeight;
     });
     hooks.on('battle:end', (r) => { if (current === 'battle') { showResult(r); sync(); } });
 
     const view = {
       id: 'battle', label: 'Combat', icon: '⚔️', el: screen,
-      onShow() { if (!game.battle && !game.pending) game.startBattle(); paint(); if (game.pending) showResult(game.pending); },
+      onShow() {
+        if (game.pending) { paint(); showResult(game.pending); return; }
+        if (!game.battle) game.startBattle();
+        paint();
+        if (game.pending) showResult(game.pending);
+      },
       update() { if (current === 'battle') sync(); },
     };
     return view;
@@ -731,6 +942,8 @@ api.registerContent({ config: { summon: { weights: { rare: 40, epic: 40, legenda
   let mainEl = null;
 
   function mount() {
+    screens.set('lobby', buildLobby());
+    screens.set('campaign', buildCampaign());
     screens.set('battle', buildBattle());
     screens.set('heroes', buildHeroes());
     screens.set('summon', buildSummon());
@@ -745,7 +958,9 @@ api.registerContent({ config: { summon: { weights: { rare: 40, epic: 40, legenda
     document.body.append(top, main, nav);
 
     // les écrans de base deviennent des onglets (les mods peuvent en ajouter)
-    const base = [...screens.values()].map((v) => ({ id: v.id, label: v.label, icon: v.icon }));
+    const TAB_ORDER = ['lobby', 'campaign', 'heroes', 'summon', 'autel', 'mods'];
+    const base = TAB_ORDER.map((id) => screens.get(id)).filter(Boolean)
+      .map((v) => ({ id: v.id, label: v.label, icon: v.icon }));
     ui.tabs = [...base, ...ui.tabs.filter((t) => !base.some((b) => b.id === t.id))];
 
     ui.onTabs = (tabs) => {
@@ -761,7 +976,7 @@ api.registerContent({ config: { summon: { weights: { rare: 40, epic: 40, legenda
       for (const b of nav.children) b.classList.toggle('active', b.dataset.id === current);
     }
 
-    goTo('battle');
+    goTo('lobby');
     refreshTop();
     setInterval(refreshTop, 400);
     return { goTo, update: (dt) => screens.get(current)?.update?.(dt) };
