@@ -27,12 +27,23 @@ export function createApp({ game, hooks, ui, mods, api }) {
   }
 
   // ------------------------------------------------------------- accueil
+  const RANKS = [
+    [0, 'Recrue'], [8, 'Écuyer'], [16, 'Chevalier'], [24, 'Chevalier d’élite'],
+    [32, 'Champion'], [48, 'Maître'], [64, 'Légende'], [96, 'Mythe'],
+  ];
+  const rankOf = (best) => [...RANKS].reverse().find(([n]) => best >= n)?.[1] ?? 'Recrue';
+
   function buildLobby() {
-    const showcase = h('div', { className: 'showcase' });
-    const progress = h('div', { className: 'lobby-progress' });
-    const actions = h('div', { className: 'lobby-grid' });
-    const bottom = h('div', { className: 'lobby-bottom' });
-    const screen = h('section', { className: 'screen lobby' }, [showcase, progress, actions, bottom]);
+    const art = h('img', { className: 'hub-art', alt: '' });
+    const glow = h('div', { className: 'hub-glow' });
+    const profile = h('div', { className: 'hub-profile' });
+    const rail = h('div', { className: 'hub-rail' });
+    const bottom = h('div', { className: 'hub-bottom' });
+
+    const screen = h('section', { className: 'screen hub' }, [
+      art, glow, h('div', { className: 'hub-vig' }), h('div', { className: 'hub-dust' }),
+      profile, rail, bottom,
+    ]);
 
     const chapterOf = (stage) => {
       const i = Math.floor((stage - 1) / 8) % Math.max(1, DB.factions.length);
@@ -40,90 +51,86 @@ export function createApp({ game, hooks, ui, mods, api }) {
     };
 
     function paint() {
-      const team = game.state.team.map((id) => game.stats(id)).filter(Boolean).sort((a, b) => b.power - a.power);
+      const team = game.state.team.map((id) => game.stats(id)).filter(Boolean)
+        .sort((a, b) => b.power - a.power);
       const star = team[0];
-      showcase.innerHTML = '';
       if (star) {
-        showcase.style.setProperty('--r', RARITY[star.rarity]?.color ?? '#888');
-        showcase.append(
-          h('img', { className: 'showcase-art', src: star.art, alt: star.name, onError: (e) => e.target.remove() }),
-          h('div', { className: 'showcase-shade' }),
-          h('div', { className: 'showcase-info' }, [
-            h('span', { className: 'sc-tag', text: RARITY[star.rarity]?.label ?? '' }),
-            h('h2', { className: 'sc-name', text: star.name }),
-            h('p', { className: 'sc-title', text: star.title }),
-            h('div', { className: 'sc-stats' }, [
-              h('span', { text: `⚡ ${fmt(game.teamPower())}` }),
-              h('span', { text: `👥 ${team.length}/5` }),
-            ]),
-          ]),
-          h('div', { className: 'showcase-team' }, team.map((t) => h('button', {
-            className: `mini rar-${t.rarity}`,
-            title: t.name,
-            onClick: () => { goTo('heroes'); },
-          }, [
-            h('img', { src: t.art, alt: '', onError: (e) => { e.target.replaceWith(document.createTextNode(t.icon)); } }),
-            h('span', { text: t.level }),
-          ]))),
-        );
+        art.src = star.art;
+        art.onerror = () => { art.style.display = 'none'; };
+        screen.style.setProperty('--r', RARITY[star.rarity]?.color ?? '#e9b95e');
       }
 
-      const stage = game.state.stage;
-      const ch = chapterOf(stage);
-      const idx = ((stage - 1) % 8) + 1;
-      progress.innerHTML = '';
-      progress.style.setProperty('--tint', ch.tint ?? '#6a5cff');
-      progress.append(
-        h('div', { className: 'lp-head' }, [
-          h('div', { className: 'lp-ch' }, [
-            h('span', { className: 'lp-kicker', text: `CHAPITRE ${Math.floor((stage - 1) / 8) + 1}` }),
-            h('b', { text: ch.name }),
-          ]),
-          h('span', { className: 'pill', text: `Étape ${stage}` }),
-        ]),
-        h('div', { className: 'bar chap' }, [h('div', { className: 'bar-fill', style: { width: `${(idx / 8) * 100}%` } })]),
-        h('button', {
-          className: 'btn primary cta',
-          onClick: () => { game.startBattle(); goTo('battle'); },
-        }, [
-          h('span', { className: 'cta-ico', text: '⚔️' }),
-          h('span', { className: 'cta-txt' }, [
-            h('b', { text: stage % 5 === 0 ? 'AFFRONTER LE BOSS' : "COMBATTRE" }),
-            h('span', { text: `Étape ${stage} · ${ch.name}` }),
-          ]),
-          h('span', { className: 'cta-ar', text: '›' }),
+      // carte de profil (haut gauche)
+      profile.innerHTML = '';
+      const best = game.state.stats.best;
+      profile.append(
+        h('div', { className: 'pf-ava' }, star ? h('img', { src: star.art, alt: '', onError: (e) => e.target.remove() }) : null),
+        h('div', { className: 'pf-id' }, [
+          h('b', { text: (star?.name ?? 'Invité') }),
+          h('span', { className: 'pf-rank', text: `${rankOf(best)} · Îlot ${Math.max(1, Math.floor(best / 8) + 1)}` }),
+          h('div', { className: 'pf-xp' }, [h('i', { style: { width: `${((best % 8) / 8) * 100}%` } })]),
         ]),
       );
 
-      actions.innerHTML = '';
+      // rail d'icônes (droite)
+      rail.innerHTML = '';
       for (const a of [
-        { icon: '🗺️', label: 'Campagne', sub: `Étape ${game.state.stats.best}`, go: 'campaign' },
-        { icon: '🦸', label: 'Héros', sub: `${game.owned().length}/${DB.heroes.size}`, go: 'heroes' },
-        { icon: '🔮', label: 'Invoquer', sub: `${game.state.tickets} 🎟️`, go: 'summon' },
-        { icon: '🕯️', label: 'Autel', sub: `Nv ${(game.state.autel.atk ?? 0) + (game.state.autel.hp ?? 0) + (game.state.autel.gold ?? 0)}`, go: 'autel' },
-        { icon: '🧩', label: 'Mods', sub: `${game.state.mods.enabled.length} actif(s)`, go: 'mods' },
-        { icon: '💾', label: 'Sauvegarde', sub: 'exporter', on: () => game.exportSave() },
+        { icon: '🗺️', label: 'Campagne', go: 'campaign' },
+        { icon: '🦸', label: 'Héros', go: 'heroes' },
+        { icon: '🔮', label: 'Invocation', go: 'summon' },
+        { icon: '🕯️', label: 'Autel', go: 'autel' },
+        { icon: '🧩', label: 'Mods', go: 'mods' },
       ]) {
-        actions.append(h('button', {
-          className: 'lobby-tile',
-          onClick: () => (a.on ? a.on() : goTo(a.go)),
-        }, [
-          h('span', { className: 'lt-ico', text: a.icon }),
-          h('span', { className: 'lt-body' }, [h('b', { text: a.label }), h('span', { text: a.sub })]),
+        rail.append(h('button', { className: 'rail-btn', onClick: () => goTo(a.go), title: a.label }, [
+          h('span', { className: 'rb-ico', text: a.icon }),
+          h('span', { className: 'rb-lbl', text: a.label }),
         ]));
       }
 
+      // bas : nom du héros, chapitre, CTA, équipe
+      const stage = game.state.stage;
+      const ch = chapterOf(stage);
+      const idx = ((stage - 1) % 8) + 1;
       bottom.innerHTML = '';
-      bottom.append(h('div', { className: 'lobby-note' }, [
-        h('b', { text: '0 € · 0 énergie · 0 attente' }),
-        h('p', { className: 'muted tiny', text: 'Tu joues autant que tu veux. Tu bloques ? Tu farmes, tu montes, tu repasses.' }),
-      ]));
+      bottom.style.setProperty('--tint', ch.tint ?? '#6a5cff');
+      bottom.append(
+        h('div', { className: 'hub-hero' }, [
+          h('span', { className: 'hub-tag', text: RARITY[star?.rarity ?? 'rare']?.label ?? '' }),
+          h('h2', { className: 'hub-name', text: star?.name ?? 'Ton équipe' }),
+          h('p', { className: 'hub-title', text: star?.title ?? '' }),
+        ]),
+        h('div', { className: 'hub-chapter' }, [
+          h('div', { className: 'hc-line' }, [
+            h('span', { className: 'hc-k', text: `CHAPITRE ${Math.floor((stage - 1) / 8) + 1}` }),
+            h('b', { text: ch.name }),
+            h('span', { className: 'pill', text: `Étape ${stage}` }),
+          ]),
+          h('div', { className: 'bar chap' }, [h('i', { style: { width: `${(idx / 8) * 100}%` } })]),
+        ]),
+        h('button', {
+          className: 'hub-cta',
+          onClick: () => { game.startBattle(); goTo('battle'); },
+        }, [
+          h('span', { className: 'cta-ico', text: stage % 5 === 0 ? '☠️' : '⚔️' }),
+          h('span', { className: 'cta-txt' }, [
+            h('b', { text: stage % 5 === 0 ? 'BOSS' : 'COMBATTRE' }),
+            h('span', { text: `Étape ${stage} · ${fmt(game.teamPower())} ⚡` }),
+          ]),
+          h('span', { className: 'cta-ar', text: '›' }),
+        ]),
+        h('div', { className: 'hub-team' }, team.map((t) => h('button', {
+          className: `mini rar-${t.rarity}`,
+          title: `${t.name} · Nv ${t.level}`,
+          onClick: () => goTo('heroes'),
+        }, [
+          h('img', { src: t.art, alt: '', onError: (e) => e.target.remove() }),
+          h('span', { text: t.level }),
+        ]))),
+        h('div', { className: 'hub-note', text: '0 € · 0 énergie · 0 attente' }),
+      );
     }
 
-    return {
-      id: 'lobby', label: 'Accueil', icon: '🏰', el: screen,
-      onShow: paint, update() {},
-    };
+    return { id: 'lobby', label: 'Accueil', icon: '🏰', el: screen, onShow: paint, update() {} };
   }
 
   // ------------------------------------------------------------- campagne
@@ -188,10 +195,25 @@ export function createApp({ game, hooks, ui, mods, api }) {
   }
 
   // ------------------------------------------------------------- combat
+  // Formation en perspective : alliés à gauche, ennemis à droite (x, y = pieds, échelle)
+  const ALLY_SLOTS = [
+    { x: 34, y: 71, s: 0.98 },
+    { x: 34, y: 91, s: 1.08 },
+    { x: 14, y: 57, s: 0.80 },
+    { x: 14, y: 74, s: 0.88 },
+    { x: 14, y: 92, s: 0.98 },
+  ];
+  const ENEMY_SLOTS = [
+    { x: 66, y: 71, s: 0.98 },
+    { x: 66, y: 91, s: 1.08 },
+    { x: 86, y: 57, s: 0.80 },
+    { x: 86, y: 74, s: 0.88 },
+    { x: 86, y: 92, s: 0.98 },
+  ];
+
   function buildBattle() {
     const actors = new Map();
-    const enemyRow = h('div', { className: 'row enemy' });
-    const allyRow = h('div', { className: 'row ally' });
+    const field = h('div', { className: 'field' });
     const fx = h('div', { className: 'fx' });
     const cutinBox = h('div', { className: 'cutin-box' });
     const overlay = h('div', { className: 'overlay' });
@@ -218,6 +240,7 @@ export function createApp({ game, hooks, ui, mods, api }) {
 
     const stageEl = h('div', { className: 'stage' }, [
       h('div', { className: 'stage-bg' }),
+      h('div', { className: 'stage-floor' }),
       h('div', { className: 'stage-fog' }),
       h('div', { className: 'stage-vig' }),
       h('div', { className: 'hud' }, [
@@ -225,8 +248,7 @@ export function createApp({ game, hooks, ui, mods, api }) {
         h('div', { className: 'hud-mid' }, [chapterLabel, waveTag]),
         h('div', { className: 'hud-right' }, [timer, speedBtn, autoBtn]),
       ]),
-      enemyRow,
-      allyRow,
+      field,
       fx,
       cutinBox,
       overlay,
@@ -241,49 +263,68 @@ export function createApp({ game, hooks, ui, mods, api }) {
     const screen = h('section', { className: 'screen battle' }, [stageEl, ultBar, controls]);
 
     // ------------------------------------------------------- acteur
-    function actorNode(u) {
-      const spr = h('img', {
-        className: 'spr', src: `assets/sprites/${u.id}.webp`, alt: u.name, draggable: false,
-        onError: (ev) => {
-          const wrap = ev.target.parentElement;
-          ev.target.remove();
-          wrap.classList.add('no-spr');
-          if (u.art) {
-            wrap.prepend(h('div', { className: 'bust' }, [
-              h('img', {
-                src: u.art, alt: u.name,
-                onError: (e2) => { e2.target.remove(); wrap.classList.add('no-img'); },
-              }),
-              h('span', { className: 'bust-glyph', text: u.icon }),
-            ]));
-          } else {
-            wrap.prepend(h('span', { className: 'token', text: u.icon }));
-          }
-        },
+    function actorNode(u, slotIndex) {
+      const slots = u.side === 'ally' ? ALLY_SLOTS : ENEMY_SLOTS;
+      const slot = slots[slotIndex % slots.length];
+      const scale = slot.s * (u.isBoss ? 1.22 : 1);
+
+      const makeImg = (src, cls) => h('img', {
+        className: `spr ${cls}`, src, alt: u.name, draggable: false,
+        onError: (ev) => ev.target.remove(),
       });
-      const node = h('div', {
-        className: `actor ${u.side} ${u.isBoss ? 'boss' : ''} rar-${u.rarity ?? 'rare'}`,
-      }, [
+
+      const idle = makeImg(`assets/sprites/${u.id}.webp`, 'p-idle');
+      const atk = makeImg(`assets/sprites/${u.id}_atk.webp`, 'p-atk');
+
+      idle.addEventListener('error', () => {
+        // pas de sprite : médaillon du portrait, sinon emoji
+        const wrap = idle.parentElement.parentElement;
+        wrap.classList.add('no-spr');
+        if (u.art) {
+          wrap.prepend(h('div', { className: 'bust' }, [
+            h('img', { src: u.art, alt: u.name, onError: (e2) => { e2.target.remove(); wrap.classList.add('no-img'); } }),
+            h('span', { className: 'bust-glyph', text: u.icon }),
+          ]));
+        } else {
+          wrap.prepend(h('span', { className: 'token', text: u.icon }));
+        }
+      });
+
+      const hpFill = h('i', { className: 'bar-fill' });
+      const status = h('div', { className: 'status' });
+
+      const body = h('div', { className: 'actor-body' }, [
+        h('div', { className: 'head-ui' }, [
+          h('div', { className: 'nm', text: u.isBoss ? u.name.replace(' — ÉLITE', '') : u.name }),
+          h('div', { className: 'bar hp' }, [hpFill]),
+          status,
+        ]),
         h('div', { className: 'spr-wrap' }, [
           h('div', { className: 'ground' }),
-          spr,
+          h('div', { className: 'flipper' }, [idle, atk]),
           h('div', { className: 'aura' }),
           h('div', { className: 'flash' }),
           h('span', { className: 'crown', text: '👑' }),
-          h('div', { className: 'bar hp' }, [h('div', { className: 'bar-fill' })]),
-          h('div', { className: 'status' }),
         ]),
-        h('div', { className: 'nm', text: u.isBoss ? u.name.replace(' — ÉLITE', '') : u.name }),
       ]);
+
+      const node = h('div', {
+        className: `actor ${u.side} ${u.isBoss ? 'boss' : ''} rar-${u.rarity ?? 'rare'}`,
+      }, [body]);
+
+      node.style.setProperty('--x', `${slot.x}%`);
+      node.style.setProperty('--y', `${slot.y}%`);
+      node.style.setProperty('--s', String(scale));
+      node.style.setProperty('--dir', u.side === 'ally' ? '1' : '-1');
       node.style.setProperty('--el', ELEMENTS[u.element]?.color ?? '#fff');
+      node.style.zIndex = String(100 + Math.round(slot.y));
       node.querySelector('.crown').style.display = u.isBoss ? '' : 'none';
-      const refs = {
-        u, node,
-        spr: spr,
-        hp: node.querySelector('.bar.hp .bar-fill'),
-        status: node.querySelector('.status'),
-        key: '',
-      };
+
+      // la pose d'attaque n'existe pas pour tout le monde : on ne masque
+      // la pose de repos que si elle est réellement disponible
+      atk.addEventListener('load', () => node.classList.add('has-atk'), { once: true });
+
+      const refs = { u, node, body, idle, atk, hp: hpFill, status, key: '' };
       actors.set(u.uid, refs);
       return node;
     }
@@ -300,8 +341,7 @@ export function createApp({ game, hooks, ui, mods, api }) {
 
     function paint() {
       actors.clear();
-      enemyRow.innerHTML = '';
-      allyRow.innerHTML = '';
+      field.innerHTML = '';
       ultBar.innerHTML = '';
       const b = game.battle;
       if (!b) return;
@@ -309,8 +349,8 @@ export function createApp({ game, hooks, ui, mods, api }) {
       stageEl.style.setProperty('--tint', f?.tint ?? '#6a5cff');
       chapterLabel.textContent = f?.name ?? 'Combat';
       waveTag.textContent = b.stage % 5 === 0 ? `BOSS · Étape ${b.stage}` : `Étape ${b.stage}`;
-      b.team('enemy').forEach((u) => enemyRow.append(actorNode(u)));
-      b.team('ally').forEach((u) => allyRow.append(actorNode(u)));
+      b.team('enemy').forEach((u, i) => field.append(actorNode(u, i)));
+      b.team('ally').forEach((u, i) => field.append(actorNode(u, i)));
       b.team('ally').forEach((u) => ultBar.append(ultButton(u)));
       sync();
     }
@@ -346,56 +386,82 @@ export function createApp({ game, hooks, ui, mods, api }) {
     }
 
     // ------------------------------------------------------- effets
-    function center(node) {
+    function at(node) {
       const c = fx.getBoundingClientRect();
       const r = node.getBoundingClientRect();
-      return { x: r.left - c.left + r.width / 2, y: r.top - c.top + r.height / 2, w: r.width, h: r.height };
+      return { x: r.left - c.left + r.width / 2, y: r.top - c.top + r.height * 0.45, w: r.width, h: r.height };
+    }
+    const push = (el, ms) => { fx.append(el); setTimeout(() => el.remove(), ms); };
+
+    function slash(node, color, dir = 1) {
+      if (!node?.isConnected) return;
+      const p = at(node);
+      const size = Math.max(90, p.w * 1.5);
+      const el = h('div', {
+        className: 'vfx slash2',
+        style: { left: `${p.x}px`, top: `${p.y}px`, width: `${size}px`, height: `${size}px`, '--c': color, '--d': String(dir) },
+        html: `<svg viewBox="0 0 100 100" aria-hidden="true">
+          <defs><linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff" stop-opacity=".95"/>
+            <stop offset="45%" stop-color="${color}"/>
+            <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+          </linearGradient></defs>
+          <path d="M12,78 C34,10 74,6 92,26" fill="none" stroke="url(#sg)" stroke-width="9" stroke-linecap="round"/>
+          <path d="M16,86 C40,26 70,18 90,34" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+        </svg>`,
+      });
+      push(el, 460);
     }
 
-    function burst(node, color, scale = 1) {
+    function impact(node, color, power = 1) {
       if (!node?.isConnected) return;
-      const p = center(node);
-      const d = h('div', { className: 'vfx burst', style: {
-        left: `${p.x}px`, top: `${p.y}px`, '--c': color, '--s': String(scale),
-      } });
-      fx.append(d);
-      setTimeout(() => d.remove(), 520);
+      const p = at(node);
+      const size = 80 * power;
+      const el = h('div', {
+        className: 'vfx impact',
+        style: { left: `${p.x}px`, top: `${p.y}px`, width: `${size}px`, height: `${size}px`, '--c': color },
+        html: `<svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="26" fill="none" stroke="${color}" stroke-width="3" opacity=".9"/>
+          <circle cx="50" cy="50" r="12" fill="#fff" opacity=".95"/>
+          <g stroke="${color}" stroke-width="3" stroke-linecap="round" opacity=".95">
+            <line x1="50" y1="6" x2="50" y2="26"/><line x1="50" y1="74" x2="50" y2="94"/>
+            <line x1="6" y1="50" x2="26" y2="50"/><line x1="74" y1="50" x2="94" y2="50"/>
+            <line x1="19" y1="19" x2="33" y2="33"/><line x1="67" y1="67" x2="81" y2="81"/>
+            <line x1="81" y1="19" x2="67" y2="33"/><line x1="33" y1="67" x2="19" y2="81"/>
+          </g>
+        </svg>`,
+      });
+      push(el, 520);
     }
 
-    function slash(node, color) {
+    function dust(node, dir = 1) {
       if (!node?.isConnected) return;
-      const p = center(node);
-      const d = h('div', { className: 'vfx slash', style: { left: `${p.x}px`, top: `${p.y}px`, '--c': color } });
-      fx.append(d);
-      setTimeout(() => d.remove(), 420);
-    }
-
-    function particles(node, color, n = 8) {
-      if (!node?.isConnected) return;
-      const p = center(node);
-      for (let i = 0; i < n; i++) {
-        const a = (Math.PI * 2 * i) / n + Math.random();
-        const dist = 26 + Math.random() * 26;
-        const d = h('div', { className: 'vfx spark', style: {
-          left: `${p.x}px`, top: `${p.y}px`, '--c': color,
-          '--dx': `${Math.cos(a) * dist}px`, '--dy': `${Math.sin(a) * dist}px`,
-        } });
-        fx.append(d);
-        setTimeout(() => d.remove(), 600);
+      const p = at(node);
+      for (let i = 0; i < 4; i++) {
+        const el = h('div', {
+          className: 'vfx puff',
+          style: {
+            left: `${p.x + (Math.random() * 24 - 12)}px`,
+            top: `${p.y + p.h * 0.42}px`,
+            '--dx': `${(-dir * (16 + Math.random() * 26))}px`,
+            '--dy': `${-6 - Math.random() * 10}px`,
+            '--sz': `${10 + Math.random() * 12}px`,
+          },
+        });
+        push(el, 620);
       }
     }
 
     function projectile(fromNode, toNode, color) {
       if (!fromNode?.isConnected || !toNode?.isConnected) return;
-      const a = center(fromNode);
-      const b = center(toNode);
-      const d = h('div', { className: 'vfx bolt', style: { left: `${a.x}px`, top: `${a.y - 8}px`, '--c': color } });
-      fx.append(d);
-      requestAnimationFrame(() => {
-        d.style.transform = `translate(${b.x - a.x}px, ${b.y - a.y + 8}px)`;
-      });
-      setTimeout(() => { d.remove(); burst(toNode, color, 0.8); }, 240);
+      const a = at(fromNode), b = at(toNode);
+      const el = h('div', { className: 'vfx bolt', style: { left: `${a.x}px`, top: `${a.y}px`, '--c': color } });
+      fx.append(el);
+      requestAnimationFrame(() => { el.style.transform = `translate(${b.x - a.x}px, ${b.y - a.y}px)`; });
+      setTimeout(() => { el.remove(); impact(toNode, color, 0.8); }, 230);
     }
+
+    function burst(node, color, scale = 1) { impact(node, color, scale); }
 
     function hitShake(power = 1) {
       stageEl.classList.remove('shake');
@@ -425,10 +491,8 @@ export function createApp({ game, hooks, ui, mods, api }) {
       setTimeout(() => node.remove(), 1000);
     }
 
-    function animate(node, cls, ms = 400) {
+    function pose(node, cls, ms) {
       if (!node) return;
-      node.classList.remove(cls);
-      void node.offsetWidth;
       node.classList.add(cls);
       setTimeout(() => node.classList.remove(cls), ms);
     }
@@ -456,55 +520,78 @@ export function createApp({ game, hooks, ui, mods, api }) {
     }
 
     hooks.on('battle:start', () => { overlay.innerHTML = ''; cutinBox.innerHTML = ''; if (current === 'battle') paint(); });
+
     hooks.on('attack', ({ unit }) => {
       if (current !== 'battle' || !unit) return;
       const r = actors.get(unit.uid);
-      if (r) animate(r.node, 'attacking', 380);
+      if (!r) return;
+      pose(r.node, 'attacking', 420);
+      dust(r.node.querySelector('.spr-wrap'), unit.side === 'ally' ? 1 : -1);
     });
+
     hooks.on('damage', ({ source, target, amount, crit, affinity }) => {
       if (current !== 'battle') return;
       const r = actors.get(target.uid);
       if (!r) return;
+      const sr = source ? actors.get(source.uid) : null;
       const color = ELEMENTS[source?.element]?.color ?? '#fff';
       const cls = crit ? 'crit' : affinity > 0 ? 'super' : affinity < 0 ? 'weak' : '';
-      ui.float(fx, r.node.querySelector('.spr-wrap'), `-${fmt(amount)}`, cls);
-      animate(r.node, 'hurt', 340);
-      slash(r.node.querySelector('.spr-wrap'), color);
-      particles(r.node.querySelector('.spr-wrap'), color, crit ? 10 : 5);
-      if (crit) { burst(r.node.querySelector('.spr-wrap'), color, 1.25); hitShake(1.6); }
+      const spot = r.node.querySelector('.spr-wrap');
+      ui.float(fx, spot, `-${fmt(amount)}`, cls);
+      pose(r.node, 'hurt', 340);
+      if (source) {
+        const dist = Math.abs((sr?.node.getBoundingClientRect().left ?? 0) - r.node.getBoundingClientRect().left);
+        if (dist > 90) projectile(sr?.node.querySelector('.spr-wrap') ?? spot, spot, color);
+        else { slash(spot, color, source.side === 'ally' ? 1 : -1); impact(spot, color, crit ? 1.4 : 1); }
+      } else {
+        impact(spot, color, 1);
+      }
+      if (crit) hitShake(1.6);
       else if (target.isBoss) hitShake(0.9);
-      if (source && r.u.side !== source.side) projectile(actors.get(source.uid)?.node.querySelector('.spr-wrap'), r.node.querySelector('.spr-wrap'), color);
     });
+
     hooks.on('heal', ({ target, amount }) => {
       if (current !== 'battle') return;
       const r = actors.get(target.uid);
       if (!r) return;
-      ui.float(fx, r.node.querySelector('.spr-wrap'), `+${fmt(amount)}`, 'heal');
-      burst(r.node.querySelector('.spr-wrap'), '#6ee7a0', 1.1);
+      const spot = r.node.querySelector('.spr-wrap');
+      ui.float(fx, spot, `+${fmt(amount)}`, 'heal');
+      impact(spot, '#6ee7a0', 0.9);
     });
+
     hooks.on('shield', ({ unit }) => {
       if (current !== 'battle') return;
       const r = actors.get(unit?.uid);
-      if (r) { burst(r.node.querySelector('.spr-wrap'), '#7bd0ff', 1); ui.float(fx, r.node.querySelector('.spr-wrap'), 'BOUCLIER', 'shielded'); }
+      if (!r) return;
+      const spot = r.node.querySelector('.spr-wrap');
+      impact(spot, '#7bd0ff', 1);
+      ui.float(fx, spot, 'BOUCLIER', 'shielded');
     });
+
     hooks.on('stun', ({ unit }) => {
       if (current !== 'battle') return;
       const r = actors.get(unit?.uid);
       if (r) ui.float(fx, r.node.querySelector('.spr-wrap'), 'ÉTOURDI', 'status');
     });
+
     hooks.on('death', ({ unit }) => {
       if (current !== 'battle') return;
       const r = actors.get(unit?.uid);
-      if (r) { animate(r.node, 'dying', 700); burst(r.node.querySelector('.spr-wrap'), '#ff7a7a', 1.3); }
+      if (!r) return;
+      pose(r.node, 'dying', 760);
+      impact(r.node.querySelector('.spr-wrap'), '#ff7a7a', 1.3);
+      dust(r.node.querySelector('.spr-wrap'), unit.side === 'ally' ? 1 : -1);
     });
+
     hooks.on('skill:cast', ({ unit }) => {
       if (current !== 'battle') return;
       const r = actors.get(unit?.uid);
       if (!r) return;
-      animate(r.node, 'casting', 620);
-      burst(r.node.querySelector('.spr-wrap'), ELEMENTS[unit.element]?.color ?? '#fff', 1.2);
+      pose(r.node, 'casting', 640);
+      impact(r.node.querySelector('.spr-wrap'), ELEMENTS[unit.element]?.color ?? '#fff', 1.2);
       if (unit.side === 'ally') cutIn(unit);
     });
+
     hooks.on('battle:end', (r) => { if (current === 'battle') { showResult(r); sync(); } });
 
     const view = {
