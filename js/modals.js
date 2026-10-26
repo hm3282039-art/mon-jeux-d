@@ -11,6 +11,7 @@ import {
   HONOR_SHOP_ITEMS,
   AUTOBOT_PROTOCOLS,
 } from './data.js';
+import { PATCH_NOTES, ROADMAP_PHASES, CURRENT_VERSION } from './roadmap.js';
 import { formatNum } from './state.js';
 
 const RARITY_LABELS = {
@@ -70,22 +71,31 @@ export class ModalController {
   }
 
   open(buildingId, initialTab = 0) {
-    const b = CITADEL_BUILDINGS.find((item) => item.id === buildingId);
-    if (!b) return;
+    const meta =
+      buildingId === 'roadmap'
+        ? {
+            id: 'roadmap',
+            accent: '#FFD700',
+            icon: '📜',
+            kicker: `ARCHIVES ROYALES · VERSION ${CURRENT_VERSION}`,
+            name: 'Feuille de Route & Mises à Jour',
+          }
+        : CITADEL_BUILDINGS.find((item) => item.id === buildingId);
+    if (!meta) return;
 
-    this.activeBuildingId = b.id;
+    this.activeBuildingId = meta.id;
     this.activeTabIndex = initialTab;
 
-    this.modalEl.style.setProperty('--modal-accent', b.accent);
-    this.emblemEl.textContent = b.icon;
-    this.kickerEl.textContent = b.kicker;
-    this.titleEl.textContent = b.name;
+    this.modalEl.style.setProperty('--modal-accent', meta.accent);
+    this.emblemEl.textContent = meta.icon;
+    this.kickerEl.textContent = meta.kicker;
+    this.titleEl.textContent = meta.name;
 
     this.backdrop.classList.add('is-open');
     this.backdrop.setAttribute('aria-hidden', 'false');
 
     this.sound.playModalOpen();
-    this.onModalChange?.(b.id);
+    this.onModalChange?.(meta.id === 'roadmap' ? null : meta.id);
     this._renderCurrentBuilding();
   }
 
@@ -130,6 +140,12 @@ export class ModalController {
           { label: '🤖 Console Auto-Bot (∞)', render: () => this._renderConsoleBot() },
           { label: '🔊 Audio & Effets VFX', render: () => this._renderConsoleSettings() },
           { label: '👑 Profil du Seigneur', render: () => this._renderConsoleProfile() },
+          { label: '📜 Feuille de Route & MAJ', render: () => this._renderPatchNotes() },
+        ];
+      case 'roadmap':
+        return [
+          { label: '📝 Journal des Mises à Jour (MAJ)', render: () => this._renderPatchNotes() },
+          { label: '🗺️ Feuille de Route du Jeu', render: () => this._renderRoadmapPhases() },
         ];
       default:
         return [];
@@ -1069,6 +1085,99 @@ export class ModalController {
       this.sound.playClick();
       this.onToast?.('Sauvegarde restaurée aux valeurs initiales.', 'info');
       this._renderCurrentBuilding();
+    });
+  }
+
+  // ==========================================================================
+  // 7. FEUILLE DE ROUTE & JOURNAL DES MISES À JOUR (PATCH NOTES)
+  // ==========================================================================
+
+  _renderPatchNotes() {
+    const wrap = document.createElement('div');
+    wrap.className = 'panel-stack';
+    wrap.innerHTML = `
+      <div class="info-banner roadmap-intro">
+        <div>
+          <h4>📜 Registre Officiel des Mises à Jour d’Astria</h4>
+          <p>Retrouvez ici le détail complet de chaque mise à jour appliquée au jeu, de la plus récente à la fondation de la Citadelle.</p>
+        </div>
+        <button type="button" class="gold-btn" id="btn-goto-roadmap-tab">
+          🗺️ Voir la Feuille de Route
+        </button>
+      </div>
+
+      <div class="patch-timeline">
+        ${PATCH_NOTES.map(
+          (entry) => `
+          <article class="patch-card ${entry.isLatest ? 'patch-latest' : ''}">
+            <div class="patch-head">
+              <div class="patch-title-row">
+                <span class="patch-version">${entry.version}</span>
+                <span class="rarity-pill ${entry.isLatest ? 'legendary' : 'rare'}">${entry.tag}</span>
+              </div>
+              <span class="patch-date">${entry.date}</span>
+            </div>
+            <h3 class="patch-title">${entry.title}</h3>
+            <ul class="patch-list">
+              ${entry.changes.map((c) => `<li>${c}</li>`).join('')}
+            </ul>
+          </article>
+        `,
+        ).join('')}
+      </div>
+    `;
+
+    this.contentEl.appendChild(wrap);
+
+    wrap.querySelector('#btn-goto-roadmap-tab')?.addEventListener('click', () => {
+      this.sound.playTab();
+      this.open('roadmap', 1);
+    });
+  }
+
+  _renderRoadmapPhases() {
+    const wrap = document.createElement('div');
+    wrap.className = 'panel-stack';
+    wrap.innerHTML = `
+      <div class="info-banner roadmap-intro">
+        <div>
+          <h4>🗺️ Feuille de Route de Développement — Chroniques d’Astria</h4>
+          <p>Vision d’évolution continue de la Capitale Céleste. Chaque nouvelle demande vient enrichir ce codex et les versions déployées.</p>
+        </div>
+        <button type="button" class="cyan-btn" id="btn-goto-patch-tab">
+          📝 Journal des MAJ
+        </button>
+      </div>
+
+      <div class="roadmap-phases-grid">
+        ${ROADMAP_PHASES.map(
+          (ph) => `
+          <article class="roadmap-phase-card status-${ph.status}">
+            <div class="rp-top">
+              <span class="rp-phase">${ph.phase}</span>
+              <span class="rp-badge status-${ph.status}">${ph.statusLabel}</span>
+            </div>
+            <h4>${ph.title}</h4>
+            <div class="rp-bar-row">
+              <div class="progress-track">
+                <div class="progress-fill gold" style="width: ${ph.progress}%"></div>
+              </div>
+              <span class="rp-pct">${ph.progress}%</span>
+            </div>
+            <ul class="patch-list">
+              ${ph.items.map((it) => `<li>${it}</li>`).join('')}
+            </ul>
+          </article>
+        `,
+        ).join('')}
+      </div>
+    `;
+
+    this.contentEl.appendChild(wrap);
+
+    wrap.querySelector('#btn-goto-patch-tab')?.addEventListener('click', () => {
+      this.sound.playTab();
+      this.open('roadmap', 0);
     });
   }
 }

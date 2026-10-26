@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css?v=astria-1" />
+  <link rel="stylesheet" href="css/style.css?v=1.2.0" />
 </head>
 <body>
   <!-- Écran d'ouverture astral -->
@@ -22,35 +22,47 @@
     <p class="boot-sub">Initialisation du Sanctuaire Céleste…</p>
   </div>
 
-  <!-- Scène Canvas 60fps plein écran -->
+  <!-- Scène Canvas 60fps plein écran (100% dégagée en bas !) -->
   <div id="viewport" class="viewport">
     <canvas id="citadel-canvas" aria-label="Vue interactive de la Citadelle Céleste"></canvas>
 
     <!-- Étiquettes flottantes dynamiques synchronisées aux bâtiments -->
     <div id="building-labels" class="building-labels" role="navigation" aria-label="Bâtiments de la Citadelle"></div>
 
-    <!-- Vignette cinématique d'encadrement -->
+    <!-- Vignette cinématique légère laissant respirer l'illustration -->
     <div class="citadel-vignette" aria-hidden="true"></div>
   </div>
 
-  <!-- Surcouche Interface Utilisateur (CSS Grid / Flexbox) -->
+  <!-- Surcouche Interface Utilisateur : Barre Supérieure Unifiée -->
   <div class="hud-layer">
-    <!-- ==================== BARRE SUPÉRIEURE ==================== -->
     <header class="top-bar" id="top-bar">
-      <!-- Carte Profil du Joueur -->
+      <!-- Gauche : Carte Profil du Joueur (Cadre Or Ouvragé + Badge Niveau Lumineux + Barre EXP) -->
       <button class="profile-card" id="profile-card-btn" type="button" title="Modifier l'avatar et consulter le profil du Seigneur">
-        <div class="avatar-frame">
-          <img id="player-avatar" src="assets/heroes/titania.jpg" alt="Avatar du joueur" />
+        <div class="avatar-ornate-wrap">
+          <span class="avatar-corner corner-tl" aria-hidden="true"></span>
+          <span class="avatar-corner corner-tr" aria-hidden="true"></span>
+          <span class="avatar-corner corner-bl" aria-hidden="true"></span>
+          <span class="avatar-corner corner-br" aria-hidden="true"></span>
+          <div class="avatar-frame">
+            <img id="player-avatar" src="assets/heroes/titania.jpg" alt="Avatar du joueur" />
+          </div>
           <span class="level-pill" id="player-level">Niv. 42</span>
         </div>
+
         <div class="profile-info">
           <div class="profile-name-row">
             <span class="player-name" id="player-name">Seigneur Astria</span>
             <span class="player-rank-tag" id="player-title">Archonte</span>
           </div>
-          <div class="xp-track" title="Progression du niveau de compte">
-            <div class="xp-fill" id="player-xp-fill" style="width: 64%"></div>
+
+          <!-- Barre de progression d'EXP élégante sous le Nom / Titre -->
+          <div class="xp-row" title="Progression d'EXP du Seigneur">
+            <div class="xp-track">
+              <div class="xp-fill" id="player-xp-fill" style="width: 64%"></div>
+            </div>
+            <span class="xp-pct" id="player-xp-text">EXP 64%</span>
           </div>
+
           <div class="cp-readout">
             <span class="cp-icon" aria-hidden="true">⚡</span>
             <span class="cp-label">PC ÉQUIPE</span>
@@ -59,17 +71,19 @@
         </div>
       </button>
 
-      <!-- Bandeau Central : Titre de la Capitale & Statut Sans Énergie -->
-      <div class="citadel-crest" aria-hidden="true">
-        <div class="crest-line"></div>
-        <div class="crest-content">
-          <span class="crest-kicker">GRANDE CAPITALE CÉLESTE</span>
-          <span class="crest-name">SANCTUAIRE D'ASTRIA</span>
+      <!-- Centre : Statut Auto-Bot & Indicateur de Farm Infini (Sans Énergie) -->
+      <button class="top-bot-pill" id="autobot-ticker-btn" data-open-building="console" type="button" title="Ouvrir la Console Auto-Bot & Journal en direct">
+        <span class="bot-pulse" id="bot-pulse-dot"></span>
+        <div class="top-bot-meta">
+          <div class="top-bot-head">
+            <span class="bot-badge" id="bot-status-badge">AUTO-BOT ×2 · ∞ FARM ILLIMITÉ</span>
+            <span class="fps-chip" id="fps-readout">60 FPS</span>
+          </div>
+          <span class="bot-log-line" id="bot-live-line">0 Énergie · Patrouille astrale active…</span>
         </div>
-        <div class="crest-line"></div>
-      </div>
+      </button>
 
-      <!-- Compteurs Dynamiques de Devises (Sans aucune Énergie / Stamina !) -->
+      <!-- Droite : Compteurs Dynamiques de Devises & Commandes Système -->
       <div class="economy-bar" aria-label="Ressources du joueur">
         <!-- Or / Pièces (Farm illimité) -->
         <div class="currency-pill currency-gold" id="pill-gold" title="Or Impérial — Farm automatique illimité">
@@ -87,7 +101,7 @@
             </svg>
           </div>
           <div class="currency-meta">
-            <span class="currency-label">Or Impérial <em id="gold-rate">+145/s</em></span>
+            <span class="currency-label">Or Impérial <em id="gold-rate">+419/s</em></span>
             <strong class="currency-value" id="val-gold">125 400</strong>
           </div>
           <button class="currency-plus" data-open-building="portal" type="button" title="Farmer de l'Or sans limite">+</button>
@@ -137,41 +151,32 @@
           <button class="currency-plus" data-open-building="coliseum" type="button" title="Combattre au Grand Colisée">+</button>
         </div>
 
-        <!-- Commandes rapides Audio & Paramètres -->
+        <!-- Commandes rapides : Feuille de Route / MAJ, Audio & Paramètres -->
         <div class="top-actions">
+          <button class="roadmap-btn" id="btn-roadmap" data-open-building="roadmap" type="button" title="Feuille de Route & Journal des Mises à Jour (R)">
+            <span class="rm-ico">📜</span>
+            <span class="rm-ver" id="roadmap-ver">v1.2</span>
+            <span class="rm-dot" aria-hidden="true"></span>
+          </button>
           <button class="hud-icon-btn" id="btn-audio-toggle" type="button" title="Activer / Couper les effets sonores Web Audio (M)" aria-label="Audio">
             <span id="audio-icon">🔊</span>
           </button>
-          <button class="hud-icon-btn" id="btn-quick-settings" data-open-building="console" type="button" title="Paramètres & Console Auto-Bot (6)" aria-label="Console Auto-Bot">
+          <button class="hud-icon-btn" id="btn-quick-settings" data-open-building="console" type="button" title="Paramètres & Console Auto-Bot" aria-label="Console Auto-Bot">
             <span>⚙️</span>
           </button>
         </div>
       </div>
     </header>
-
-    <!-- ==================== BARRE INFÉRIEURE : DOCK & AUTO-BOT ==================== -->
-    <footer class="bottom-hud" id="bottom-hud">
-      <!-- Téléscripteur Auto-Bot (Progression sans limite) -->
-      <button class="autobot-ticker" id="autobot-ticker-btn" data-open-building="console" type="button" title="Configurer la Console Auto-Bot">
-        <span class="bot-pulse" id="bot-pulse-dot"></span>
-        <div class="bot-ticker-copy">
-          <div class="bot-ticker-top">
-            <span class="bot-badge" id="bot-status-badge">AUTO-BOT ACTIF · ∞ SANS ÉNERGIE</span>
-            <span class="fps-chip" id="fps-readout">60 FPS</span>
-          </div>
-          <p class="bot-log-line" id="bot-live-line">Patrouille astrale en cours — Économie illimitée active…</p>
-        </div>
-      </button>
-
-      <!-- Accès Rapide aux 6 Bâtiments de la Citadelle -->
-      <nav class="quick-dock" id="quick-dock" aria-label="Accès rapide aux quartiers"></nav>
-    </footer>
   </div>
 
   <!-- ==================== SYSTÈME DE MODALES DES BÂTIMENTS ==================== -->
   <div class="modal-backdrop" id="modal-backdrop" aria-hidden="true">
     <section class="building-modal" id="building-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="modal-ornament modal-ornament-top" aria-hidden="true"></div>
+      <span class="modal-corner mc-tl" aria-hidden="true"></span>
+      <span class="modal-corner mc-tr" aria-hidden="true"></span>
+      <span class="modal-corner mc-bl" aria-hidden="true"></span>
+      <span class="modal-corner mc-br" aria-hidden="true"></span>
 
       <header class="modal-header">
         <div class="modal-title-group">
@@ -199,6 +204,6 @@
   <!-- Notifications flottantes -->
   <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
 
-  <script type="module" src="js/main.js?v=astria-1"></script>
+  <script type="module" src="js/main.js?v=1.2.0"></script>
 </body>
 </html>

@@ -139,6 +139,9 @@ export class CitadelCanvas {
   _buildFloatingLabels() {
     this.labelsContainer.innerHTML = '';
     CITADEL_BUILDINGS.forEach((b, idx) => {
+      const anchor = document.createElement('div');
+      anchor.className = 'building-tag-anchor';
+
       const tag = document.createElement('button');
       tag.type = 'button';
       tag.className = 'building-tag';
@@ -146,7 +149,7 @@ export class CitadelCanvas {
       tag.style.setProperty('--tag-accent', b.accent);
 
       tag.innerHTML = `
-        <span class="tag-key">${b.shortcut}</span>
+        <span class="tag-aura" aria-hidden="true"></span>
         <span class="tag-icon">${b.icon}</span>
         <span class="tag-body">
           <strong class="tag-title">${b.name}</strong>
@@ -172,8 +175,10 @@ export class CitadelCanvas {
         this.onSelectBuilding?.(b.id);
       });
 
-      this.labelsContainer.appendChild(tag);
+      anchor.appendChild(tag);
+      this.labelsContainer.appendChild(anchor);
       this.labelNodes.set(b.id, {
+        anchorEl: anchor,
         el: tag,
         subEl: tag.querySelector('[data-role="sub"]'),
         pipEl: tag.querySelector('[data-role="pip"]'),
@@ -330,15 +335,15 @@ export class CitadelCanvas {
   }
 
   _hitTestScreen(sx, sy) {
-    // Ignore les zones sous la barre du haut et le dock du bas
-    if (sy < 74 || sy > this.vh - 68) return null;
+    // Ignore uniquement la barre supérieure (aucune barre inférieure !)
+    if (sy < 78) return null;
     const { u, v } = this.screenToWorld(sx, sy);
     for (let i = CITADEL_BUILDINGS.length - 1; i >= 0; i--) {
       const b = CITADEL_BUILDINGS[i];
       if (pointInPolygon(u, v, b.polygon)) return b;
       const dx = (u - b.center.u) / b.radius.rx;
       const dy = (v - b.center.v) / b.radius.ry;
-      if (dx * dx + dy * dy <= 0.72) return b;
+      if (dx * dx + dy * dy <= 0.76) return b;
     }
     return null;
   }
@@ -422,17 +427,27 @@ export class CitadelCanvas {
       const next = cur + (target - cur) * (1 - Math.exp(-11 * dt));
       this.hoverMix.set(b.id, Math.abs(next - target) < 0.002 ? target : next);
 
-      // Émission de particules ascendantes sur le bâtiment survolé
-      if (isHovered && Math.random() < 0.65) {
+      // Émission enrichie de particules d'aura magique sur le bâtiment survolé
+      if (isHovered && Math.random() < 0.88) {
+        const spriteById = {
+          temple: Math.random() < 0.55 ? 'gold' : 'cyan',
+          portal: 'cyan',
+          forge: Math.random() < 0.7 ? 'amber' : 'gold',
+          coliseum: Math.random() < 0.5 ? 'violet' : 'gold',
+          barracks: Math.random() < 0.5 ? 'cyan' : 'gold',
+          console: 'cyan',
+        };
+        const ang = Math.random() * Math.PI * 2;
+        const rad = 0.25 + Math.random() * 0.75;
         this.localizedSparks.push({
-          u: b.center.u + (Math.random() - 0.5) * b.radius.rx * 1.1,
-          v: b.center.v + (Math.random() - 0.2) * b.radius.ry * 0.7,
-          vu: (Math.random() - 0.5) * 0.015,
-          vv: -(0.035 + Math.random() * 0.045),
-          life: 0.9 + Math.random() * 0.5,
-          maxLife: 1.3,
-          size: 7 + Math.random() * 11,
-          sprite: b.accent === '#00E5FF' || b.accent === '#38BDF8' ? 'cyan' : 'gold',
+          u: b.center.u + Math.cos(ang) * b.radius.rx * rad,
+          v: b.center.v + Math.sin(ang) * b.radius.ry * rad * 0.65,
+          vu: (Math.random() - 0.5) * 0.018,
+          vv: -(0.032 + Math.random() * 0.052),
+          life: 0.95 + Math.random() * 0.55,
+          maxLife: 1.45,
+          size: 8 + Math.random() * 13,
+          sprite: spriteById[b.id] || 'gold',
         });
       }
     }
@@ -703,25 +718,47 @@ export class CitadelCanvas {
   }
 
   _drawBuildingHighlights(ctx, tr) {
+    const auraSpriteById = {
+      temple: 'gold',
+      portal: 'cyan',
+      forge: 'amber',
+      coliseum: 'violet',
+      barracks: 'cyan',
+      console: 'cyan',
+    };
+
     for (const b of CITADEL_BUILDINGS) {
       const mix = this.hoverMix.get(b.id) || 0;
       const cx = tr.drawX + b.center.u * tr.drawW;
       const cy = tr.drawY + b.center.v * tr.drawH;
+      const auraSpr = this.sprites[auraSpriteById[b.id]] || this.sprites.gold;
 
-      // Balise d'ambiance discrète au repos + intensification majeure au survol
+      // Balise d'ambiance discrète au repos
       if (mix <= 0.01) {
-        const idlePulse = 0.14 + 0.06 * Math.sin(this.time * 2.1 + b.center.u * 10);
+        const idlePulse = 0.13 + 0.05 * Math.sin(this.time * 2.1 + b.center.u * 10);
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
         ctx.globalAlpha = idlePulse;
-        const sz = tr.drawW * b.radius.rx * 1.1;
-        const spr = b.accent === '#00E5FF' || b.accent === '#38BDF8' ? this.sprites.cyan : this.sprites.gold;
-        ctx.drawImage(spr, cx - sz * 0.5, cy - sz * 0.5, sz, sz);
+        const sz = tr.drawW * b.radius.rx * 1.08;
+        ctx.drawImage(auraSpr, cx - sz * 0.5, cy - sz * 0.5, sz, sz);
         ctx.restore();
         continue;
       }
 
-      // Effet de zoom local subtil du bâtiment (scale animation au survol)
+      const hoverPulse = 0.84 + 0.16 * Math.sin(this.time * 4.4);
+
+      // 1. Lueur pulsante douce en arrière-plan du bâtiment survolé
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const backW = tr.drawW * b.radius.rx * (2.25 + 0.22 * hoverPulse);
+      const backH = tr.drawH * b.radius.ry * (2.15 + 0.22 * hoverPulse);
+      ctx.globalAlpha = 0.34 * mix * hoverPulse;
+      ctx.drawImage(auraSpr, cx - backW * 0.5, cy - backH * 0.5, backW, backH);
+      ctx.globalAlpha = 0.26 * mix * hoverPulse;
+      ctx.drawImage(this.sprites.gold, cx - backW * 0.38, cy - backH * 0.38, backW * 0.76, backH * 0.76);
+      ctx.restore();
+
+      // 2. Effet de zoom local fluide sur l'architecture du bâtiment
       if (this.bgLoaded) {
         ctx.save();
         ctx.beginPath();
@@ -734,7 +771,7 @@ export class CitadelCanvas {
         ctx.closePath();
         ctx.clip();
 
-        const localScale = 1 + 0.034 * mix;
+        const localScale = 1 + 0.032 * mix;
         ctx.translate(cx, cy);
         ctx.scale(localScale, localScale);
         ctx.translate(-cx, -cy);
@@ -742,17 +779,47 @@ export class CitadelCanvas {
         ctx.restore();
       }
 
-      // Halo lumineux + contour runique animé Or & Cyan
+      // 3. Aura magique lumineuse : colonne éthérée + sceau runique rotatif + contour doré
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
 
-      const haloW = tr.drawW * b.radius.rx * (1.85 + 0.15 * mix);
-      const haloH = tr.drawH * b.radius.ry * (1.85 + 0.15 * mix);
-      ctx.globalAlpha = 0.42 * mix;
-      ctx.drawImage(this.sprites.gold, cx - haloW * 0.5, cy - haloH * 0.5, haloW, haloH);
+      // Colonne d'aura ascendante
+      const pillarW = tr.drawW * b.radius.rx * 0.95;
+      const pillarH = tr.drawH * b.radius.ry * 1.65;
+      const pillarGrad = ctx.createLinearGradient(cx, cy + pillarH * 0.35, cx, cy - pillarH * 0.75);
+      pillarGrad.addColorStop(0, 'rgba(255, 215, 0, 0)');
+      pillarGrad.addColorStop(0.35, `rgba(255, 215, 0, ${(0.18 * mix * hoverPulse).toFixed(3)})`);
+      pillarGrad.addColorStop(1, 'rgba(0, 229, 255, 0)');
+      ctx.fillStyle = pillarGrad;
+      ctx.fillRect(cx - pillarW * 0.5, cy - pillarH * 0.75, pillarW, pillarH * 1.1);
 
-      // Contour polygonal illuminé
-      ctx.globalAlpha = 0.85 * mix;
+      // Sceau magique en perspective autour du monument
+      const sigilRx = tr.drawW * b.radius.rx * (0.92 + 0.05 * hoverPulse);
+      ctx.save();
+      ctx.translate(cx, cy + tr.drawH * b.radius.ry * 0.26);
+      ctx.scale(1, 0.36);
+
+      ctx.rotate(this.time * 0.55);
+      ctx.strokeStyle = b.accent;
+      ctx.globalAlpha = 0.58 * mix * hoverPulse;
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([16, 10]);
+      ctx.beginPath();
+      ctx.arc(0, 0, sigilRx, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.rotate(-this.time * 1.1);
+      ctx.strokeStyle = '#FFD700';
+      ctx.globalAlpha = 0.65 * mix;
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([6, 10]);
+      ctx.beginPath();
+      ctx.arc(0, 0, sigilRx * 0.78, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Contour polygonal illuminé avec pulsation
+      ctx.globalAlpha = (0.78 + 0.16 * hoverPulse) * mix;
       ctx.beginPath();
       b.polygon.forEach(([pu, pv], idx) => {
         const px = tr.drawX + pu * tr.drawW;
@@ -763,17 +830,16 @@ export class CitadelCanvas {
       ctx.closePath();
 
       ctx.strokeStyle = b.accent;
-      ctx.lineWidth = 2.4 * mix;
+      ctx.lineWidth = 2.3 * mix;
       ctx.shadowColor = '#FFD700';
-      ctx.shadowBlur = 18 * mix;
+      ctx.shadowBlur = 20 * mix * hoverPulse;
       ctx.setLineDash([12, 7]);
-      ctx.lineDashOffset = -this.time * 28;
+      ctx.lineDashOffset = -this.time * 30;
       ctx.stroke();
 
-      // Second filet intérieur doré
       ctx.setLineDash([]);
-      ctx.strokeStyle = `rgba(255, 215, 0, ${0.55 * mix})`;
-      ctx.lineWidth = 1.1;
+      ctx.strokeStyle = `rgba(255, 215, 0, ${(0.58 * mix * hoverPulse).toFixed(3)})`;
+      ctx.lineWidth = 1.15;
       ctx.stroke();
 
       ctx.restore();
@@ -840,10 +906,10 @@ export class CitadelCanvas {
   }
 
   _syncFloatingLabels(tr) {
-    const minX = 95;
-    const maxX = this.vw - 95;
-    const minY = 98;
-    const maxY = this.vh - 102;
+    const minX = 96;
+    const maxX = this.vw - 96;
+    const minY = 104;
+    const maxY = this.vh - 46;
 
     for (const b of CITADEL_BUILDINGS) {
       const ref = this.labelNodes.get(b.id);
@@ -851,19 +917,18 @@ export class CitadelCanvas {
 
       const rawX = tr.drawX + b.labelAnchor.u * tr.drawW;
       const rawY = tr.drawY + b.labelAnchor.v * tr.drawH;
-      const mix = this.hoverMix.get(b.id) || 0;
-      const floatBob = Math.sin(this.time * 2.2 + b.center.u * 9) * 3.5;
+      const isHovered = this.hoveredId === b.id;
+      const floatBob = Math.sin(this.time * 2.2 + b.center.u * 9) * 3.2;
 
       // Masque élégamment l'étiquette si le bâtiment sort largement du cadre sur mobile
       const outOfView = rawX < -60 || rawX > this.vw + 60;
       const clampedX = Math.max(minX, Math.min(maxX, rawX));
-      const clampedY = Math.max(minY, Math.min(maxY, rawY + floatBob - mix * 7));
-      const scale = 1 + mix * 0.085;
+      const clampedY = Math.max(minY, Math.min(maxY, rawY + floatBob));
 
-      ref.el.style.opacity = this.activeModalId ? '0' : outOfView ? '0' : '1';
-      ref.el.style.pointerEvents = this.activeModalId || outOfView ? 'none' : 'auto';
-      ref.el.style.transform = `translate3d(${clampedX.toFixed(1)}px, ${clampedY.toFixed(1)}px, 0) translate(-50%, -50%) scale(${scale.toFixed(3)})`;
-      ref.el.classList.toggle('is-hovered', mix > 0.35);
+      ref.anchorEl.style.opacity = this.activeModalId || outOfView ? '0' : '1';
+      ref.anchorEl.style.pointerEvents = this.activeModalId || outOfView ? 'none' : 'auto';
+      ref.anchorEl.style.transform = `translate3d(${clampedX.toFixed(1)}px, ${clampedY.toFixed(1)}px, 0)`;
+      ref.el.classList.toggle('is-hovered', isHovered);
     }
   }
 }
