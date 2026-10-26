@@ -5,6 +5,7 @@
 
 import { SoundEngine } from './audio.js';
 import { CITADEL_BUILDINGS, HERO_CATALOG } from './data.js';
+import { CURRENT_VERSION } from './roadmap.js';
 import { CitadelState, formatNum } from './state.js';
 import { CitadelCanvas } from './citadel-canvas.js';
 import { ModalController } from './modals.js';
@@ -81,7 +82,6 @@ function bootstrap() {
     onToast: showToast,
     onModalChange: (buildingId) => {
       citadelCanvas?.setModalFocus(buildingId);
-      syncQuickDockActive(buildingId);
     },
   });
 
@@ -127,6 +127,7 @@ function bootstrap() {
   const nameEl = document.getElementById('player-name');
   const titleEl = document.getElementById('player-title');
   const xpFillEl = document.getElementById('player-xp-fill');
+  const xpTextEl = document.getElementById('player-xp-text');
   const goldRateEl = document.getElementById('gold-rate');
   const audioIconEl = document.getElementById('audio-icon');
   const botPulseEl = document.getElementById('bot-pulse-dot');
@@ -147,7 +148,9 @@ function bootstrap() {
     if (levelEl) levelEl.textContent = `Niv. ${d.player.level}`;
     if (nameEl) nameEl.textContent = d.player.name;
     if (titleEl) titleEl.textContent = d.player.title.split(' ')[0];
-    if (xpFillEl) xpFillEl.style.width = `${Math.min(100, d.player.xp)}%`;
+    const xpPct = Math.min(100, Math.round(d.player.xp));
+    if (xpFillEl) xpFillEl.style.width = `${xpPct}%`;
+    if (xpTextEl) xpTextEl.textContent = `EXP ${xpPct}%`;
     if (goldRateEl) goldRateEl.textContent = `+${formatNum(state.getGoldPerSecond())}/s`;
     if (audioIconEl) audioIconEl.textContent = d.settings.audioEnabled ? '🔊' : '🔇';
     if (fpsEl) fpsEl.style.display = d.settings.showFps ? '' : 'none';
@@ -155,7 +158,7 @@ function bootstrap() {
     if (botPulseEl) botPulseEl.classList.toggle('paused', !d.autobot.active);
     if (botBadgeEl) {
       botBadgeEl.textContent = d.autobot.active
-        ? `AUTO-BOT ×${d.autobot.speed} ACTIF · ∞ SANS ÉNERGIE`
+        ? `AUTO-BOT ×${d.autobot.speed} · ∞ FARM ILLIMITÉ`
         : 'AUTO-BOT EN VEILLE · ∞ SANS ÉNERGIE';
     }
     if (botLineEl && state.botLogs[0]) {
@@ -167,43 +170,6 @@ function bootstrap() {
 
   state.subscribe(() => syncHudFromState());
   syncHudFromState();
-
-  // -------------------- Construction du Dock d'Accès Rapide --------------------
-
-  const quickDock = document.getElementById('quick-dock');
-  CITADEL_BUILDINGS.forEach((b, idx) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'dock-btn';
-    btn.dataset.dockId = b.id;
-    btn.style.setProperty('--dock-accent', b.accent);
-    btn.innerHTML = `
-      <span class="dock-ico">${b.icon}</span>
-      <span class="dock-lbl">${b.name}</span>
-      <kbd class="dock-key">${b.shortcut}</kbd>
-    `;
-
-    btn.addEventListener('pointerenter', () => {
-      citadelCanvas.hoveredId = b.id;
-      sound.playHover(idx);
-    });
-    btn.addEventListener('pointerleave', () => {
-      if (citadelCanvas.hoveredId === b.id) citadelCanvas.hoveredId = null;
-    });
-    btn.addEventListener('click', () => {
-      sound.playClick();
-      const pt = citadelCanvas.worldToScreen(b.center.u, b.center.v);
-      citadelCanvas.spawnRipple(pt.x, pt.y, b.accent);
-      modals.open(b.id);
-    });
-    quickDock.appendChild(btn);
-  });
-
-  function syncQuickDockActive(activeId) {
-    quickDock.querySelectorAll('.dock-btn').forEach((btn) => {
-      btn.classList.toggle('active', btn.dataset.dockId === activeId);
-    });
-  }
 
   // -------------------- Liaisons des Boutons de la Barre du Haut --------------------
 
@@ -229,11 +195,20 @@ function bootstrap() {
     showToast(next ? '🔊 Audio Web Audio API activé' : '🔇 Effets sonores coupés', 'info');
   });
 
-  // Raccourcis Clavier (1..6 pour ouvrir les bâtiments, M pour l'audio)
+  const roadmapVerEl = document.getElementById('roadmap-ver');
+  if (roadmapVerEl) roadmapVerEl.textContent = CURRENT_VERSION;
+
+  // Raccourcis Clavier (1..6 bâtiments, R feuille de route, M audio)
   window.addEventListener('keydown', (e) => {
     if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
-    if (e.key.toLowerCase() === 'm') {
+    const k = e.key.toLowerCase();
+    if (k === 'm') {
       document.getElementById('btn-audio-toggle')?.click();
+      return;
+    }
+    if (k === 'r') {
+      sound.playClick();
+      modals.open('roadmap', 0);
       return;
     }
     const found = CITADEL_BUILDINGS.find((b) => b.shortcut === e.key);
