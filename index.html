@@ -3,16 +3,202 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="theme-color" content="#0b0d14" />
-  <title>Idle Legends</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <meta name="theme-color" content="#070b19" />
+  <title>Chroniques d'Astria — Citadelle Céleste</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css?v=astria-1" />
 </head>
 <body>
-  <div id="boot" class="boot">
-    <div class="boot-orb">🔮</div>
-    <p>Chargement d'Idle Legends…</p>
+  <!-- Écran d'ouverture astral -->
+  <div id="boot-screen" class="boot-screen" aria-live="polite">
+    <div class="boot-emblem">
+      <div class="boot-ring boot-ring-outer"></div>
+      <div class="boot-ring boot-ring-inner"></div>
+      <span class="boot-core">✦</span>
+    </div>
+    <h1 class="boot-title">CHRONIQUES D'ASTRIA</h1>
+    <p class="boot-sub">Initialisation du Sanctuaire Céleste…</p>
   </div>
-  <noscript>Active JavaScript pour jouer.</noscript>
-  <script type="module" src="js/main.js"></script>
+
+  <!-- Scène Canvas 60fps plein écran -->
+  <div id="viewport" class="viewport">
+    <canvas id="citadel-canvas" aria-label="Vue interactive de la Citadelle Céleste"></canvas>
+
+    <!-- Étiquettes flottantes dynamiques synchronisées aux bâtiments -->
+    <div id="building-labels" class="building-labels" role="navigation" aria-label="Bâtiments de la Citadelle"></div>
+
+    <!-- Vignette cinématique d'encadrement -->
+    <div class="citadel-vignette" aria-hidden="true"></div>
+  </div>
+
+  <!-- Surcouche Interface Utilisateur (CSS Grid / Flexbox) -->
+  <div class="hud-layer">
+    <!-- ==================== BARRE SUPÉRIEURE ==================== -->
+    <header class="top-bar" id="top-bar">
+      <!-- Carte Profil du Joueur -->
+      <button class="profile-card" id="profile-card-btn" type="button" title="Modifier l'avatar et consulter le profil du Seigneur">
+        <div class="avatar-frame">
+          <img id="player-avatar" src="assets/heroes/titania.jpg" alt="Avatar du joueur" />
+          <span class="level-pill" id="player-level">Niv. 42</span>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name-row">
+            <span class="player-name" id="player-name">Seigneur Astria</span>
+            <span class="player-rank-tag" id="player-title">Archonte</span>
+          </div>
+          <div class="xp-track" title="Progression du niveau de compte">
+            <div class="xp-fill" id="player-xp-fill" style="width: 64%"></div>
+          </div>
+          <div class="cp-readout">
+            <span class="cp-icon" aria-hidden="true">⚡</span>
+            <span class="cp-label">PC ÉQUIPE</span>
+            <strong class="cp-value" id="player-cp">488 879</strong>
+          </div>
+        </div>
+      </button>
+
+      <!-- Bandeau Central : Titre de la Capitale & Statut Sans Énergie -->
+      <div class="citadel-crest" aria-hidden="true">
+        <div class="crest-line"></div>
+        <div class="crest-content">
+          <span class="crest-kicker">GRANDE CAPITALE CÉLESTE</span>
+          <span class="crest-name">SANCTUAIRE D'ASTRIA</span>
+        </div>
+        <div class="crest-line"></div>
+      </div>
+
+      <!-- Compteurs Dynamiques de Devises (Sans aucune Énergie / Stamina !) -->
+      <div class="economy-bar" aria-label="Ressources du joueur">
+        <!-- Or / Pièces (Farm illimité) -->
+        <div class="currency-pill currency-gold" id="pill-gold" title="Or Impérial — Farm automatique illimité">
+          <div class="currency-icon-wrap">
+            <svg viewBox="0 0 24 24" class="currency-svg" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="url(#goldGrad)" stroke="#FFF2B2" stroke-width="1.4" />
+              <path d="M12 7l2.2 3.2L12 17l-2.2-6.8L12 7z" fill="#FFF7D6" opacity="0.9" />
+              <defs>
+                <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#FFE97D" />
+                  <stop offset="55%" stop-color="#FFD700" />
+                  <stop offset="100%" stop-color="#B87A08" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="currency-meta">
+            <span class="currency-label">Or Impérial <em id="gold-rate">+145/s</em></span>
+            <strong class="currency-value" id="val-gold">125 400</strong>
+          </div>
+          <button class="currency-plus" data-open-building="portal" type="button" title="Farmer de l'Or sans limite">+</button>
+        </div>
+
+        <!-- Cristaux Astraux (Monnaie Gacha) -->
+        <div class="currency-pill currency-crystals" id="pill-crystals" title="Cristaux Astraux — Invocation au Temple">
+          <div class="currency-icon-wrap">
+            <svg viewBox="0 0 24 24" class="currency-svg" aria-hidden="true">
+              <polygon points="12,2 20,9 16.5,21 7.5,21 4,9" fill="url(#crystalGrad)" stroke="#BAFAFF" stroke-width="1.3" />
+              <polygon points="12,4.5 16.5,9.5 12,18.5 7.5,9.5" fill="#E0FCFF" opacity="0.55" />
+              <defs>
+                <linearGradient id="crystalGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#9BFFFF" />
+                  <stop offset="50%" stop-color="#00E5FF" />
+                  <stop offset="100%" stop-color="#1E56C5" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="currency-meta">
+            <span class="currency-label">Cristaux Astraux</span>
+            <strong class="currency-value" id="val-crystals">3 600</strong>
+          </div>
+          <button class="currency-plus" data-open-building="temple" type="button" title="Ouvrir le Temple d'Invocation">+</button>
+        </div>
+
+        <!-- Insignes d'Honneur (Monnaie JcJ / Classé) -->
+        <div class="currency-pill currency-honor" id="pill-honor" title="Insignes d'Honneur — Récompenses du Grand Colisée">
+          <div class="currency-icon-wrap">
+            <svg viewBox="0 0 24 24" class="currency-svg" aria-hidden="true">
+              <path d="M12 2L20 6v6c0 5.2-3.4 8.9-8 10-4.6-1.1-8-4.8-8-10V6l8-4z" fill="url(#honorGrad)" stroke="#FFE59E" stroke-width="1.3" />
+              <path d="M12 6.4l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5L12 6.4z" fill="#FFF7D6" />
+              <defs>
+                <linearGradient id="honorGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#FF9AE8" />
+                  <stop offset="45%" stop-color="#7C4DFF" />
+                  <stop offset="100%" stop-color="#22175A" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="currency-meta">
+            <span class="currency-label">Insignes d'Honneur</span>
+            <strong class="currency-value" id="val-honor">840</strong>
+          </div>
+          <button class="currency-plus" data-open-building="coliseum" type="button" title="Combattre au Grand Colisée">+</button>
+        </div>
+
+        <!-- Commandes rapides Audio & Paramètres -->
+        <div class="top-actions">
+          <button class="hud-icon-btn" id="btn-audio-toggle" type="button" title="Activer / Couper les effets sonores Web Audio (M)" aria-label="Audio">
+            <span id="audio-icon">🔊</span>
+          </button>
+          <button class="hud-icon-btn" id="btn-quick-settings" data-open-building="console" type="button" title="Paramètres & Console Auto-Bot (6)" aria-label="Console Auto-Bot">
+            <span>⚙️</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==================== BARRE INFÉRIEURE : DOCK & AUTO-BOT ==================== -->
+    <footer class="bottom-hud" id="bottom-hud">
+      <!-- Téléscripteur Auto-Bot (Progression sans limite) -->
+      <button class="autobot-ticker" id="autobot-ticker-btn" data-open-building="console" type="button" title="Configurer la Console Auto-Bot">
+        <span class="bot-pulse" id="bot-pulse-dot"></span>
+        <div class="bot-ticker-copy">
+          <div class="bot-ticker-top">
+            <span class="bot-badge" id="bot-status-badge">AUTO-BOT ACTIF · ∞ SANS ÉNERGIE</span>
+            <span class="fps-chip" id="fps-readout">60 FPS</span>
+          </div>
+          <p class="bot-log-line" id="bot-live-line">Patrouille astrale en cours — Économie illimitée active…</p>
+        </div>
+      </button>
+
+      <!-- Accès Rapide aux 6 Bâtiments de la Citadelle -->
+      <nav class="quick-dock" id="quick-dock" aria-label="Accès rapide aux quartiers"></nav>
+    </footer>
+  </div>
+
+  <!-- ==================== SYSTÈME DE MODALES DES BÂTIMENTS ==================== -->
+  <div class="modal-backdrop" id="modal-backdrop" aria-hidden="true">
+    <section class="building-modal" id="building-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-ornament modal-ornament-top" aria-hidden="true"></div>
+
+      <header class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-emblem" id="modal-emblem">🔮</div>
+          <div>
+            <span class="modal-kicker" id="modal-kicker">SANCTUAIRE D'ASTRIA</span>
+            <h2 class="modal-title" id="modal-title">Temple d'Invocation</h2>
+          </div>
+        </div>
+
+        <div class="modal-header-right">
+          <span class="unlimited-chip">∞ Progression Illimitée</span>
+          <button class="modal-close-btn" id="modal-close-btn" type="button" aria-label="Fermer la fenêtre">✕</button>
+        </div>
+      </header>
+
+      <!-- Onglets internes du bâtiment -->
+      <div class="modal-tabs" id="modal-tabs" role="tablist"></div>
+
+      <!-- Contenu dynamique du bâtiment -->
+      <div class="modal-content" id="modal-content"></div>
+    </section>
+  </div>
+
+  <!-- Notifications flottantes -->
+  <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+  <script type="module" src="js/main.js?v=astria-1"></script>
 </body>
 </html>
